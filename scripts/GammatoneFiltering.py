@@ -13,6 +13,7 @@ import struct
 import subprocess
 import time
 import wave
+from multiprocessing.pool import Pool
 from os import rename, remove
 from os.path import splitext
 from shutil import copyfile
@@ -79,6 +80,29 @@ def loadGFBMatrix(filename):
     return numpy.load(filename + '.npy')
 
 
+def GammatoneFiltering(wavFile):
+    gfbFilename = splitext(wavFile)[0] + '.GFB'
+
+    # Compute the filterbank output
+    startTime = time.time()
+    nbframes, outputMatrix = getFilteredOutput(wavFile)
+    duration = time.time() - startTime
+    print(gfbFilename)
+    print('        Time for filtering:', duration)
+
+    # # If needed, plotting the first output of the file
+    # t = [i for i in range(nbframes)]
+    # plt.plot(t,outputMatrix[0])
+    # plt.show()
+
+    # Save file to .GFB.npy format
+    startTime = time.time()
+    saveGFBMatrix(gfbFilename, outputMatrix)
+    duration = time.time() - startTime
+    print(gfbFilename)
+    print('           Time for saving:', duration)
+
+
 def main():
     # # In case you need to print numpy outputs:
     # numpy.set_printoptions(threshold=numpy.inf, suppress=True)
@@ -88,35 +112,13 @@ def main():
     wavFiles = glob.glob('../src/f2cnn/*/*.WAV')
 
     # # Test WavFiles
-    # wavFiles = ['testSmall.WAV', 'testBig.WAV']
+    # wavFiles = ['../testFiles/testSmall.WAV', '../testFiles/testBig.WAV']
 
-    averageSavingDuration = 0
-    averageFilterDuration = 0
-    for i, w in enumerate(wavFiles):
-        gfbFilename = splitext(w)[0] + '.GFB'
-        print(gfbFilename)
+    # Usage of multiprocessing, to reduce computing time
+    proc = 4
+    multiproc_pool = Pool(processes=proc)
+    multiproc_pool.map(GammatoneFiltering, wavFiles)
 
-        # Compute the filterbank output
-        startTime = time.time()
-        nbframes, outputMatrix = getFilteredOutput(w)
-        duration = time.time() - startTime
-        averageFilterDuration += duration
-        print('        Time for filtering:', duration)
-
-        # # If needed, plotting the first output of the file
-        # t = [i for i in range(nbframes)]
-        # plt.plot(t,outputMatrix[0])
-        # plt.show()
-
-        # Save file to .GFB.npy format
-        startTime = time.time()
-        saveGFBMatrix(gfbFilename, outputMatrix)
-        duration = time.time() - startTime
-        averageSavingDuration += duration
-        print('           Time for saving:', duration)
-
-    print('\nAverage Filtering duration:', float(averageSavingDuration) / len(wavFiles))
-    print('   Average Saving duration:', float(averageFilterDuration) / len(wavFiles))
     print('                Total time:', time.time() - TotalTime)
 
 
