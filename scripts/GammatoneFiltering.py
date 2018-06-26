@@ -13,7 +13,7 @@ import struct
 import subprocess
 import time
 import wave
-from os import rename
+from os import rename, remove
 from os.path import splitext
 from shutil import copyfile
 import matplotlib.pyplot as plt
@@ -47,10 +47,10 @@ def getFilteredOutput(filename):
         a = struct.unpack("<h", a)[0]
         wavList[i] = a
 
-    # If plotting is needed
-    t = [i for i in range(len(wavList))]
-    plt.plot(t, wavList)
-    plt.show()
+    # # If plotting is needed
+    # t = [i for i in range(len(wavList))]
+    # plt.plot(t, wavList)
+    # plt.show()
 
     # gammatone library needs a numpy array
 
@@ -67,7 +67,7 @@ def convertWavFile(filename):
     """
     newname = splitext(filename)[0] + '.mp3'
     copyfile(filename, newname)
-    rename(filename, filename + '-backup')
+    remove(filename)
     subprocess.call(['ffmpeg', '-i', newname, filename])
 
 
