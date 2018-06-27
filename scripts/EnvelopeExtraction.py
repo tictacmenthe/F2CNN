@@ -98,7 +98,7 @@ def main():
     gfbFiles = glob.glob('../src/f2cnn/*/*.GFB.npy')
 
     # # Test WavFiles
-    # gfbFiles = ["../src/f2cnn/TRAIN/DR6.MEAL0.SX197.GFB.npy"]
+    # gfbFiles = ["../testFiles/testSmall.GFB.npy", "../testFiles/testBig.GFB.npy"]
 
     # Usage of multiprocessing, to reduce computing time
     proc = 4

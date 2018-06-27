@@ -14,10 +14,10 @@ import subprocess
 import time
 import wave
 from multiprocessing.pool import Pool
-from os import rename, remove
+from os import remove
 from os.path import splitext
 from shutil import copyfile
-import matplotlib.pyplot as plt
+
 import numpy
 
 from libs.gammatone import filters
