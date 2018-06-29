@@ -13,6 +13,7 @@ from os.path import splitext
 from multiprocessing.pool import Pool
 import numpy as np
 from scipy.signal import hilbert, butter, lfilter
+import matplotlib.pyplot as plt
 
 SAMPLING_RATE = 16000
 CUTOFF = 100
@@ -22,16 +23,18 @@ METHOD = 1
 def paddedHilbert(signal):
     """
     Computes the analytic signal of 'signal' with a fast hilbert transform
-    Considering FFTs are very slow when the length of the signal is not a power of 2, this pads with zeroes the signal
-    for a very fast hilber transform, then cuts it back to the correct length
+    FFTs are very slow when the length of the signal is not a power of 2 or is far from it,
+    this pads with zeroes the signal for a very fast hilber transform, then cuts it back to the correct length
     :param signal: the signal to use for analytic signal computation
     :return: the analytic signal
     """
+    # Array of 0 for padding until the next power of 2
     padding = np.zeros(int(2 ** np.ceil(np.log2(len(signal)))) - len(signal))
+    # Append it at the end of the signal
     tohilbert = np.hstack((signal, padding))
-
+    # Hilbert transform with the padded signal
     result = hilbert(tohilbert)
-
+    # Remove excess values
     result = result[0:len(signal)]
 
     return result
@@ -49,21 +52,19 @@ def lowPassFilter(signal, freq):
     return lfilter(B, A, signal, axis=0)
 
 
-def EnvelopeExtraction(npyfile):
+def ExtractEnvelope(gfbFileName):
     """
-    The function that is used by the multiprocessing pool for faster computation of the envelopes
-    Saves the filtered enveloped that was extracted to the ORIGINALNAME.ENVx.npy format,
-    with x being the method used(1,2,3...)
-    :param npyfile: path to the file to be processed
+    Extracts 128 envelopes from the npy matrix stored in the parameter file
+    :param gfbFileName: path to the file to be processed, with the extension .GFB.npy
     """
     # Load the matrix
-    matrix = np.load(npyfile)
+    matrix = np.load(gfbFileName)
 
     # Matrix that will be saved
     outputMatrix = np.zeros(matrix.shape)
+    t=[i for i in range(len(outputMatrix[0]))]
 
     # Computing the envelope and filtering it
-    duration = time.time()
     for i, signal in enumerate(matrix):
         # print(npyfile,i)
         # Envelope extraction
@@ -73,20 +74,24 @@ def EnvelopeExtraction(npyfile):
         filtered_envelope = lowPassFilter(amplitude_envelope, CUTOFF)
         # Save the envelope to the right output channel
         outputMatrix[i] = filtered_envelope
+    plt.imshow(outputMatrix,cmap="gray",aspect="auto")
+    plt.show()
+    return outputMatrix
 
-    duration = time.time() - duration
 
-    print("ENDED", npyfile)
-    print(len(matrix[0]))
-    print("        Hilbert Duration:", duration)
-
-    # Saving the matrix
-    duration = time.time()
+def SaveEnvelope(matrix, gfbFileName):
+    """
+    Save the envelope matrix to a file with the extension .ENVx.npy, with x the method used(1,2,...)
+    :param matrix: the (128 * nbframes) matrix of envelopes to be saved
+    :param gfbFileName: the original filename
+    """
     # Envelope file nane is NAME.ENV+METHOD NUMBER.npy (.ENV1,.ENV2...)
-    envelopeFilename = splitext(splitext(npyfile)[0])[0] + ".ENV" + str(METHOD)
-    np.save(envelopeFilename, outputMatrix)
-    duration = time.time() - duration
-    print("         Saving Duration:", duration)
+    envelopeFilename = splitext(splitext(gfbFileName)[0])[0] + ".ENV" + str(METHOD)
+    np.save(envelopeFilename, matrix)
+
+
+def ExtractAndSaveEnvelope(gfbFileName):
+    SaveEnvelope(ExtractEnvelope(gfbFileName), gfbFileName)
 
 
 def main():
@@ -94,16 +99,16 @@ def main():
     # numpy.set_printoptions(threshold=numpy.inf, suppress=True)
     TotalTime = time.time()
 
-    # Get all the WAV files under ../src
-    gfbFiles = glob.glob('../src/f2cnn/*/*.GFB.npy')
+    # # Get all the WAV files under ../src
+    # gfbFiles = glob.glob('../src/f2cnn/*/*.GFB.npy')
 
-    # # Test WavFiles
-    # gfbFiles = ["../testFiles/testSmall.GFB.npy", "../testFiles/testBig.GFB.npy"]
+    # Test WavFiles
+    gfbFiles = ["../testFiles/testSmall.GFB.npy"]#, "../testFiles/testBig.GFB.npy"]
 
     # Usage of multiprocessing, to reduce computing time
     proc = 4
     multiproc_pool = Pool(processes=proc)
-    multiproc_pool.map(EnvelopeExtraction, gfbFiles)
+    multiproc_pool.map(ExtractAndSaveEnvelope, gfbFiles)
 
     print('              Total time:', time.time() - TotalTime)
 

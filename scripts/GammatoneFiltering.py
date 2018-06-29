@@ -17,16 +17,16 @@ from multiprocessing.pool import Pool
 from os import remove
 from os.path import splitext
 from shutil import copyfile
-
+import matplotlib.pyplot as plt
 import numpy
 
 from libs.gammatone import filters
 
 # ##### PREPARATION OF FILTERBANK
 # CENTER FREQUENCIES ON ERB SCALE
-freqs = filters.centre_freqs(16000, 128, 100)
+CENTER_FREQUENCIES = filters.centre_freqs(16000, 128, 100)
 # Filter coefficient for a Gammatone filterbank
-filterBankCoeffs = filters.make_erb_filters(16000, freqs)
+FILTERBANK_COEFFICIENTS = filters.make_erb_filters(16000, CENTER_FREQUENCIES)
 
 
 def getFilteredOutput(filename):
@@ -39,7 +39,7 @@ def getFilteredOutput(filename):
     try:
         wavFile = wave.open(filename, 'r')
     except wave.Error:
-        print("Converting Files to correct format...")
+        print("Converting file to correct format...")
         convertWavFile(filename)
         wavFile = wave.open(filename, 'r')
     wavList = numpy.zeros(wavFile.getnframes())
@@ -57,7 +57,7 @@ def getFilteredOutput(filename):
 
     # Application of the filterbank to a vector
     filteredMatrix = filters.erb_filterbank(wavList,
-                                            filterBankCoeffs)  # Matrix of wavFile.getnframes() X 128 real values
+                                            FILTERBANK_COEFFICIENTS)  # Matrix of wavFile.getnframes() X 128 real values
     return wavFile.getnframes(), filteredMatrix
 
 
@@ -106,13 +106,18 @@ def GammatoneFiltering(wavFile):
 def main():
     # # In case you need to print numpy outputs:
     # numpy.set_printoptions(threshold=numpy.inf, suppress=True)
+
     TotalTime = time.time()
 
-    # Get all the WAV files under ../src
-    wavFiles = glob.glob('../src/f2cnn/*/*.WAV')
+    # # Get all the WAV files under ../src
+    # wavFiles = glob.glob('../src/f2cnn/*/*.WAV')
+    print("FREQS:",CENTER_FREQUENCIES)
+    print("COEFS:",FILTERBANK_COEFFICIENTS)
 
-    # # Test WavFiles
-    # wavFiles = ['../testFiles/testSmall.WAV', '../testFiles/testBig.WAV']
+    plt.plot(CENTER_FREQUENCIES)
+    plt.show()
+    # Test WavFiles
+    wavFiles = ['../testFiles/testSmall.WAV']#, '../testFiles/testBig.WAV']
 
     # Usage of multiprocessing, to reduce computing time
     proc = 4
