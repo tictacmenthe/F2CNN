@@ -14,6 +14,7 @@ from multiprocessing.pool import Pool
 import numpy as np
 from scipy.signal import hilbert, butter, lfilter
 import matplotlib.pyplot as plt
+from matplotlib.colors import NoNorm, LogNorm
 
 SAMPLING_RATE = 16000
 CUTOFF = 100
@@ -74,7 +75,7 @@ def ExtractEnvelope(gfbFileName):
         filtered_envelope = lowPassFilter(amplitude_envelope, CUTOFF)
         # Save the envelope to the right output channel
         outputMatrix[i] = filtered_envelope
-    plt.imshow(outputMatrix,cmap="gray",aspect="auto")
+    plt.imshow(outputMatrix,cmap="gray",norm=LogNorm(),aspect="auto",extent=[0,len(t)/16000.,100,7795])
     plt.show()
     return outputMatrix
 
