@@ -10,7 +10,7 @@ src/f2cnn/TRAIN/*
 !src/f2cnn/TEST/.gitkeep
 !src/f2cnn/TRAIN/.gitkeep
 .idea
-
+Pictures/
 
 # Created by https://www.gitignore.io/api/python,pycharm
 

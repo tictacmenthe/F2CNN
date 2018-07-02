@@ -1,0 +1,200 @@
+USER MANUAL FOR MSR-UCLA VTR-FORMANT DATABASE
+
+Li Deng and Abeer Alwan
+July 2006
+
+
+The MSR-UCLA VTR-Formant database you are downloading consists of two directories:
+
+\Train directory: containing a total of six sub-directories (dr1, dr3, dr4, dr5, dr6, dr7). 346 utterances in total; two utterances per speaker
+
+\Test directory: containing a total of eight sub-directories (dr1, dr2, dr3, dr4, dr5, dr6, dr7, dr8). 192 utterances in total; eight utterances per speaker
+
+(the third directory \examples contains a few graphical files for displaying the results of the data superimposd on spectrograms)
+
+Each subdirectory, which refers to a certain dialect, contains a number of speakers. Each speaker, referred to as a sub-sub-directory, further contains a few utterances. For each utterance, there are three files (.phn, .wrd., and .fb). The *.phn, *.wrd files are in ASCII format, showing the phone and word segmentations, respectively, as provided by the TIMIT database. The *.fb file is in the HTK format which can be read using the following Matlab code: 
+
+    fid=fopen(FMTFILE, 'r', 'b');
+    n_frame=fread(fid, 1, 'int32');
+    samPeriod=fread(fid, 1, 'int32');
+    sampSize=fread(fid, 1, 'int16');
+    numComps=sampSize/4; 			 
+    fileType=fread(fid, 1, 'int16');  
+    dataSet=zeros(n_frame,numComps);
+    for n = 1:n_frame
+       a=fread(fid, numComps, 'float');  
+       dataSet(n,:)=a';
+    end
+    fclose(fid);         
+
+The code puts the data into a 2-dimensional array dataSet, the first dimension is the frame number and the second is the
+the VTR vector containing values for
+the first four formant frequencies and their bandwidths (F1, F2, F3, F4, B1, B2, B3, and B4) in kHz. 
+
+Alternatively, the *.fb files can be read by the HTK command “hlist”. For example, using hlist the following output was observed for
+a certain utterance file.
+
+C:\IPAM05-MSR-VTR-Formants\Test\dr1\felc0>hlist -h si1386.fb |more
+---------------------------------- Source: si1386.fb ---------------------------
+  Sample Bytes:  32       Sample Kind:   USER
+  Num Comps:     8        Sample Period: 1000.0 us
+  Num Samples:   552      File Format:   HTK
+------------------------------------ Samples: 0->-1 ----------------------------
+0:       0.656   1.489   2.556   3.604   0.221   0.322   0.397   0.460
+1:       0.765   1.514   2.590   3.608   0.212   0.358   0.357   0.454
+2:       0.749   1.517   2.616   3.658   0.205   0.335   0.374   0.447
+3:       0.803   1.486   2.587   3.683   0.166   0.367   0.353   0.465
+4:       0.809   1.530   2.584   3.702   0.179   0.359   0.345   0.466
+5:       0.827   1.623   2.576   3.721   0.253   0.311   0.356   0.455
+6:       0.844   1.694   2.607   3.713   0.248   0.337   0.367   0.448
+7:       0.906   1.738   2.668   3.705   0.250   0.334   0.371   0.452
+8:       0.966   1.811   2.706   3.726   0.275   0.325   0.374   0.453
+9:       0.929   1.877   2.795   3.739   0.293   0.304   0.376   0.448
+10:      1.011   1.883   2.890   3.807   0.271   0.308   0.350   0.450
+11:      1.037   1.839   2.926   3.862   0.259   0.329   0.318   0.439
+12:      1.026   1.850   2.837   3.938   0.259   0.345   0.339   0.438
+13:      0.980   1.954   2.849   3.995   0.240   0.356   0.360   0.461
+14:      0.836   2.050   2.983   4.137   0.223   0.398   0.318   0.451
+15:      0.663   2.295   3.031   4.250   0.231   0.415   0.296   0.431
+16:      0.565   2.337   2.933   4.296   0.223   0.417   0.307   0.410
+17:      0.559   2.336   2.983   4.380   0.210   0.387   0.301   0.416
+18:      0.547   2.328   2.940   4.430   0.203   0.350   0.286   0.435
+19:      0.516   2.291   2.971   4.475   0.219   0.352   0.294   0.427
+20:      0.381   2.296   2.978   4.374   0.247   0.363   0.271   0.449
+21:      0.315   2.260   2.880   4.282   0.180   0.379   0.266   0.443
+22:      0.297   2.190   2.769   4.279   0.179   0.397   0.257   0.445
+23:      0.297   2.113   2.706   4.199   0.186   0.406   0.260   0.423
+24:      0.319   2.032   2.674   4.256   0.200   0.378   0.274   0.453
+25:      0.433   1.946   2.655   4.270   0.187   0.349   0.296   0.444
+26:      0.458   1.861   2.634   4.293   0.210   0.329   0.318   0.444
+27:      0.474   1.665   2.610   4.297   0.210   0.336   0.282   0.446
+28:      0.485   1.232   2.597   4.346   0.188   0.354   0.267   0.466
+29:      0.503   0.988   2.608   4.470   0.202   0.364   0.281   0.445
+30:      0.465   0.913   2.653   4.564   0.207   0.331   0.306   0.446
+31:      0.452   0.838   2.716   4.651   0.205   0.316   0.325   0.439
+32:      0.429   0.787   2.775   4.618   0.220   0.316   0.329   0.405
+33:      0.421   0.780   2.810   4.609   0.218   0.310   0.335   0.401
+34:      0.491   0.797   2.809   4.629   0.219   0.320   0.343   0.394
+35:      0.526   0.817   2.780   4.642   0.204   0.300   0.314   0.366
+36:      0.531   0.832   2.730   4.590   0.207   0.295   0.305   0.353
+37:      0.522   0.849   2.671   4.597   0.215   0.303   0.292   0.362
+38:      0.515   0.888   2.614   4.593   0.220   0.299   0.282   0.374
+39:      0.528   0.998   2.574   4.562   0.203   0.330   0.294   0.384
+40:      0.564   1.188   2.564   4.546   0.187   0.338   0.292   0.386
+41:      0.584   1.390   2.581   4.494   0.179   0.371   0.311   0.379
+42:      0.576   1.571   2.614   4.407   0.188   0.390   0.312   0.396
+43:      0.585   1.721   2.651   4.388   0.204   0.372   0.309   0.405
+44:      0.570   1.843   2.685   4.366   0.221   0.371   0.292   0.418
+45:      0.540   1.946   2.718   4.368   0.214   0.388   0.279   0.443
+46:      0.530   2.039   2.752   4.397   0.239   0.389   0.258   0.451
+47:      0.523   2.131   2.791   4.390   0.222   0.389   0.269   0.438
+48:      0.506   2.219   2.834   4.392   0.215   0.387   0.268   0.442
+49:      0.497   2.282   2.882   4.402   0.219   0.383   0.250   0.444
+50:      0.487   2.297   2.932   4.379   0.219   0.385   0.249   0.422
+51:      0.483   2.286   2.980   4.382   0.217   0.384   0.246   0.423
+52:      0.483   2.303   3.019   4.383   0.215   0.366   0.260   0.437
+53:      0.495   2.364   3.040   4.445   0.201   0.377   0.269   0.446
+54:      0.510   2.413   3.039   4.550   0.180   0.379   0.264   0.445
+55:      0.553   2.409   3.040   4.636   0.166   0.365   0.252   0.425
+56:      0.585   2.411   3.050   4.634   0.185   0.348   0.277   0.389
+57:      0.596   2.446   3.017   4.487   0.190   0.326   0.329   0.401
+58:      0.602   2.322   2.883   4.415   0.252   0.307   0.373   0.397
+59:      0.609   1.892   2.660   4.274   0.210   0.303   0.382   0.408
+60:      0.612   1.739   2.608   4.086   0.228   0.337   0.406   0.423
+61:      0.601   1.751   2.699   3.970   0.276   0.377   0.397   0.415
+62:      0.578   1.747   2.785   3.940   0.302   0.339   0.358   0.435
+63:      0.547   1.744   2.834   3.971   0.304   0.288   0.310   0.412
+64:      0.519   1.764   2.873   3.853   0.289   0.273   0.343   0.418
+65:      0.502   1.798   2.927   3.816   0.300   0.287   0.315   0.421
+66:      0.493   1.826   2.989   3.782   0.310   0.286   0.341   0.415
+67:      0.484   1.835   3.035   3.806   0.335   0.329   0.319   0.423
+68:      0.491   1.831   3.046   3.854   0.325   0.307   0.337   0.408
+69:      0.498   1.824   3.030   3.862   0.319   0.317   0.317   0.405
+.........
+.........
+
+
+The left column shows the frame number (10 msec each). The remaining are eight-dimensional vectors containing values for
+F1, F2, F3, F4, B1, B2, B3, and B4 in kHz. 
+
+Note that only the first three elements of these vectors (F1, F2, F3) are manually corrected. The remaining elements (F4, B1, B2, B3, B4) are left unchanged as the output of the algorithm reported in the paper:
+
+L. Deng, L. Lee, H. Attias, and A. Acero. “A structured speech model with continuous hidden dynamics and prediction-residual training for tracking vocal tract resonances," Proceedings of the IEEE International Conference on Acoustics, Speech, and Signal Processing, Montreal, Canada, May 2004, Vol.I, pp.557-560. 
+
+
+For more details on the database, see the paper:
+
+Li Deng, Xiaodong Cui, Robert Pruvenok, Jonathan Huang, Safyy Momen, Yanyi Chen, and Abeer Alwan. 
+“A database of vocal tract resonance trajectories for research in speech processing,” Proceedings of the IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP), Toulouse, France, May 2006. 
+
+Note the analysis results presented in the paper have been based on the first-pass correction/labeling carried out in Summer 2005. The second-pass correction/labeling was subsequently carried out at MSR.  This may change the results reported in the paper above. The data contained in this download are the results after the second-pass correction/labeling. 
+
+Note also that since interpolation was used, VTR/formant tracks are placed in silence intervals where no VTR exists. When evaluating formant trackers, these values should probably be excluded from the evaluation.
+
+You may choose to superimpose the formant tracks onto spectrograms of the utterances to better visualize the results. Examples
+are contained in the directory \examples
+
+We hope that you will find the database useful and we welcome your comments! 
+
+
+
+Appendix: Sample Matlab code for reading waveforms and generating spectrograms used in the example files
+
+%Read the waveform
+if strcmp('.wav', wavtype)
+    [S, FS, BITS] = wavread(WAVFILE);
+else
+    fid = fopen(WAVFILE, 'r', 'b' ); 
+    HDRSIZE = 12;
+    nSamples = fread(fid, 1, 'int32');
+    samPeriod = fread(fid, 1, 'int32');
+    sampSize = fread(fid, 1, 'int16');
+    FS = 1/samPeriod*10^7;
+    BITS = sampSize*8;
+    fseek(fid, HDRSIZE, 'bof');
+    S = fread(fid, inf, 'int16');
+    fclose(fid);
+end
+cutoff_f = 6;   %cutoff frequency when displaying the spectrogram (in kHz)
+
+%do pre-emphasis
+pe = 0.97;      %pre-emphasis coefficient
+N = length(S);
+SS = S;
+SS(N) = []; SS = [0 SS']';
+SS = S - pe*SS;
+
+%Calculate the Spectrogram
+NFFT = 512; 
+FRAMESIZE = 80;
+STEP = 60;
+
+[sgram,f,time_spec] = specgram(SS, NFFT,FS,FRAMESIZE,STEP);
+f = f/1000;     %change the frequency unit to kHz
+time_spec = time_spec*1000; %change the time unit to ms
+cutoff = length(f);
+while f(cutoff) > cutoff_f    %get the index of F up to the cutoff frequency
+   cutoff = cutoff - 1;
+end
+sgram = sgram(1:cutoff,:);    %only keep up to the cutoff frequency
+sgram = 20*log10(abs(sgram)+eps); %eps is added to avoid log of zero
+
+
+%Processing of the Raw Spectrogram
+%1. Contrast enhancement and noise reduction by proper thresholding
+sgram_n = sgram - min(min(sgram)); %sgram_n is positive with minimum 0
+thresh = 2/3*mean(mean(sgram_n));
+tmp1 = sgram_n > thresh;
+sgram_n1 = sgram_n - thresh;
+sgram_n1 = sgram_n1.*tmp1;
+
+%2. Further smoothing to suppress noise
+mask_avg = fspecial('average');    %use 3x3 local average mask
+sgram_n2 = filter2(mask_avg, sgram_n1);
+
+SGRAMDATA{1}=sgram;
+SGRAMDATA{2}=f;
+SGRAMDATA{3}=time_spec;
+SGRAMDATA{4}=cutoff;
+SGRAMDATA{5}=cutoff_f;
+

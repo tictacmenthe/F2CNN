@@ -1,0 +1,48 @@
+
+
+   The DARPA TIMIT Acoustic-Phonetic Continuous Speech Corpus
+                            (TIMIT)
+
+                     Training and Test Data
+                              and
+                     Speech Header Software                              
+                     
+                    NIST Speech Disc CD1-1.1
+                          October 1990
+
+
+This CD-ROM contains the complete TIMIT acoustic-phonetic speech corpus.  
+TIMIT was designed to provide speech data for the acquisition of acoustic-
+phonetic knowledge and for the development and evaluation of automatic 
+speech recognition systems.  The disc was prepared at the National Institute
+of Standards and Technology (NIST) with sponsorship from the Defense Advanced 
+Research Projects Agency - Information Science and Technology Office 
+(DARPA-ISTO).
+
+
+CD-ROM Contents
+---------------
+
+The following files and subdirectories are located in the top-level directory
+of this CD-ROM:
+
+       convert/ - directory containing ESPRIT SAM software for converting 
+                  TIMIT speech files into a SAM compatible format;  This
+                  software (version 1.2) has been slightly modified from the 
+                  version distributed on the Resource Management CD-ROMs 
+                  (version 1.1) to work with TIMIT.
+                                  
+    /readme.doc - this file
+
+        sphere/ - directory containing a new version (1.5) of the NIST SPeech 
+                  HEader REsources (SPHERE) software;  SPHERE is a set of
+                  "C" library routines and programs for manipulating the NIST
+                  header structure prepended to the TIMIT waveform files.
+
+         timit/ - directory containing the TIMIT corpus as well as TIMIT-
+                  related documentation.  
+                                    
+Each of these directories contains a "readme.doc" file which may be consulted
+for more detailed information.
+                  
+

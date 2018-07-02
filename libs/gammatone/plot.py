@@ -114,7 +114,7 @@ def render_audio_from_file(path, duration, function):
         nframes = duration * samplerate
         data = data[0:nframes, :]
 
-    signal = data.mean(1)
+    signal = data
 
     # Default gammatone-based spectrogram parameters
     twin = 0.08

@@ -15,7 +15,7 @@ import time
 import wave
 from multiprocessing.pool import Pool
 from os import remove
-from os.path import splitext
+from os.path import splitext, join
 from shutil import copyfile
 import matplotlib.pyplot as plt
 import numpy
@@ -114,10 +114,10 @@ def main():
     print("FREQS:",CENTER_FREQUENCIES)
     print("COEFS:",FILTERBANK_COEFFICIENTS)
 
-    plt.plot(CENTER_FREQUENCIES)
-    plt.show()
     # Test WavFiles
-    wavFiles = ['../testFiles/testSmall.WAV']#, '../testFiles/testBig.WAV']
+    wavFiles = [glob.glob(join("..", "testFiles", "smallest", "*.WAV"))[0],
+                glob.glob(join("..", "testFiles", "biggest", "*.WAV"))[0]]
+    print(wavFiles)
 
     # Usage of multiprocessing, to reduce computing time
     proc = 4

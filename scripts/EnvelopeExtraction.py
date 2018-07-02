@@ -8,17 +8,19 @@ from __future__ import division
 
 import glob
 import time
-from os.path import splitext
+from os.path import splitext, join
 
 from multiprocessing.pool import Pool
 import numpy as np
 from scipy.signal import hilbert, butter, lfilter
 import matplotlib.pyplot as plt
-from matplotlib.colors import NoNorm, LogNorm
+from matplotlib.colors import LogNorm
+from scripts.FBFileReader import ExtractFBFile
 
 SAMPLING_RATE = 16000
 CUTOFF = 100
 METHOD = 1
+LP_FILTERING = False
 
 
 def paddedHilbert(signal):
@@ -58,26 +60,33 @@ def ExtractEnvelope(gfbFileName):
     Extracts 128 envelopes from the npy matrix stored in the parameter file
     :param gfbFileName: path to the file to be processed, with the extension .GFB.npy
     """
+    print("File:", gfbFileName)
     # Load the matrix
     matrix = np.load(gfbFileName)
 
     # Matrix that will be saved
-    outputMatrix = np.zeros(matrix.shape)
-    t=[i for i in range(len(outputMatrix[0]))]
-
+    if LP_FILTERING:
+        filteredEnvelope = np.zeros(matrix.shape)
+    else:
+        unfilteredEnvelope = np.zeros(matrix.shape)
     # Computing the envelope and filtering it
     for i, signal in enumerate(matrix):
         # print(npyfile,i)
         # Envelope extraction
         analytic_signal = paddedHilbert(signal)
         amplitude_envelope = np.abs(analytic_signal)
-        # Low Pass Filter with Butterworth 'CUTOFF' Hz filter
-        filtered_envelope = lowPassFilter(amplitude_envelope, CUTOFF)
-        # Save the envelope to the right output channel
-        outputMatrix[i] = filtered_envelope
-    plt.imshow(outputMatrix,cmap="gray",norm=LogNorm(),aspect="auto",extent=[0,len(t)/16000.,100,7795])
-    plt.show()
-    return outputMatrix
+        if not LP_FILTERING: unfilteredEnvelope[i] = amplitude_envelope
+        if LP_FILTERING:
+            # Low Pass Filter with Butterworth 'CUTOFF' Hz filter
+            filtered_envelope = lowPassFilter(amplitude_envelope, CUTOFF)
+            # Save the envelope to the right output channel
+            filteredEnvelope[i] = filtered_envelope
+    # PlotEnvelopeSpectrogram(unfilteredEnvelope)
+    print(gfbFileName, "done !")
+    if LP_FILTERING:
+        return filteredEnvelope
+    else:
+        return unfilteredEnvelope
 
 
 def SaveEnvelope(matrix, gfbFileName):
@@ -95,16 +104,29 @@ def ExtractAndSaveEnvelope(gfbFileName):
     SaveEnvelope(ExtractEnvelope(gfbFileName), gfbFileName)
 
 
+def PlotEnvelopeSpectrogram(matrix):
+    # Plotting the image, with logarithmic normalization
+    plt.imshow(matrix, norm=LogNorm(), aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
+    # Adding F2 Formant from VTR database
+    F2Array = ExtractFBFile("../src/f2cnn/TEST/DR1.FELC0.SI1386.FB")
+    t = [i * 10000 / 1000000. for i in range(len(F2Array))]
+    plt.title("Spectrogram and F2 formant from VTR database")
+    line, = plt.plot(t, F2Array, "r.", linewidth=2)
+    plt.legend(("F2 Formant", line))
+    plt.show()
+
+
 def main():
     # # In case you need to print numpy outputs:
     # numpy.set_printoptions(threshold=numpy.inf, suppress=True)
     TotalTime = time.time()
 
     # # Get all the WAV files under ../src
-    # gfbFiles = glob.glob('../src/f2cnn/*/*.GFB.npy')
+    # gfbFiles = glob.glob(join("..","src","f2cnn","*","*.GFB.npy"))
 
     # Test WavFiles
-    gfbFiles = ["../testFiles/testSmall.GFB.npy"]#, "../testFiles/testBig.GFB.npy"]
+    gfbFiles = ["../src/f2cnn/TEST/DR1.FELC0.SI1386.GFB.npy"]
+    print(gfbFiles)
 
     # Usage of multiprocessing, to reduce computing time
     proc = 4

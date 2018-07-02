@@ -117,7 +117,6 @@ def fft_weights(
         * np.abs(fs * (pole - ucirc) * (pole.conj() - ucirc)) ** (-GTord)
         / gain[..., None]
     )
-
     weights = weights[:, 0:maxlen]
 
     return weights, gain
