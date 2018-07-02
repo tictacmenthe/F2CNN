@@ -7,6 +7,7 @@ using Hillbert transform and low pass filtering.
 from __future__ import division
 
 import glob
+import os
 import time
 from os.path import splitext, join
 
@@ -81,7 +82,7 @@ def ExtractEnvelope(gfbFileName):
             filtered_envelope = lowPassFilter(amplitude_envelope, CUTOFF)
             # Save the envelope to the right output channel
             filteredEnvelope[i] = filtered_envelope
-    # PlotEnvelopeSpectrogram(unfilteredEnvelope)
+    PlotEnvelopeSpectrogram(unfilteredEnvelope,splitext(splitext(gfbFileName)[0])[0])
     print(gfbFileName, "done !")
     if LP_FILTERING:
         return filteredEnvelope
@@ -104,14 +105,18 @@ def ExtractAndSaveEnvelope(gfbFileName):
     SaveEnvelope(ExtractEnvelope(gfbFileName), gfbFileName)
 
 
-def PlotEnvelopeSpectrogram(matrix):
+def PlotEnvelopeSpectrogram(matrix,filename):
     # Plotting the image, with logarithmic normalization
-    plt.imshow(matrix, norm=LogNorm(), aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
-    # Adding F2 Formant from VTR database
-    F2Array = ExtractFBFile("../src/f2cnn/TEST/DR1.FELC0.SI1386.FB")
-    t = [i * 10000 / 1000000. for i in range(len(F2Array))]
-    plt.title("Spectrogram and F2 formant from VTR database")
-    line, = plt.plot(t, F2Array, "r.", linewidth=2)
+    plt.imshow(matrix, aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
+    # Get the VTR F2 Formants from the database
+    F2Array, sampPeriod = ExtractFBFile(filename+".FB")
+    t = [i * sampPeriod / 1000000. for i in range(len(F2Array))]
+
+    # TODO: Splitting by / is not platform independent
+    file=filename.split('/')
+    plt.title("Envelopes of "+os.path.join(file[-2],file[-1])+".WAV and F2 formants from VTR database")
+    # Plotting the VTR F2 formant over the envelope image
+    line, = plt.plot(t, F2Array, "r.")
     plt.legend(("F2 Formant", line))
     plt.show()
 
@@ -126,6 +131,8 @@ def main():
 
     # Test WavFiles
     gfbFiles = ["../src/f2cnn/TEST/DR1.FELC0.SI1386.GFB.npy"]
+    # glob.glob(join("..", "testFiles", "smallest", "*.GFB.npy"))[0],
+    # glob.glob(join("..", "testFiles", "biggest", "*.GFB.npy"))[0]]
     print(gfbFiles)
 
     # Usage of multiprocessing, to reduce computing time
