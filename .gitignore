@@ -3,7 +3,7 @@
 
 archives/
 testFiles/
-src/timit
+src/timit/
 src/vtr_formants/
 src/f2cnn/TEST/*
 src/f2cnn/TRAIN/*
@@ -11,6 +11,7 @@ src/f2cnn/TRAIN/*
 !src/f2cnn/TRAIN/.gitkeep
 .idea
 Pictures/
+.~lock*
 
 # Created by https://www.gitignore.io/api/python,pycharm
 
