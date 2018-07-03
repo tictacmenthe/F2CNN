@@ -3,8 +3,9 @@
 
 archives/
 testFiles/
-src/timit/
-src/vtr_formants/
+src/timit/*
+src/TIMIT/*
+src/vtr_formants/*
 src/f2cnn/TEST/*
 src/f2cnn/TRAIN/*
 !src/f2cnn/TEST/.gitkeep

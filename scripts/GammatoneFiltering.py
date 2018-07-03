@@ -1,7 +1,7 @@
 """
 
 This script runs the WAV files from TIMIT database that are needed with VTR FORMANTS through a Gammatone FilterBank,
-and saves the output (128*NBFrame floats for each WAV file) to the f2cnn/TRAIN or TEST directorty,
+and saves the output (128*NBFrame floats for each WAV file) to the f2cnn/TRAIN or TEST directories,
 with the .GFB.npy extension
 
 The files should be first processed with OrganiseFiles.py
@@ -109,14 +109,17 @@ def main():
 
     TotalTime = time.time()
 
-    # # Get all the WAV files under ../src
-    # wavFiles = glob.glob('../src/f2cnn/*/*.WAV')
-    print("FREQS:",CENTER_FREQUENCIES)
-    print("COEFS:",FILTERBANK_COEFFICIENTS)
-
-    # Test WavFiles
-    wavFiles = [glob.glob(join("..", "testFiles", "smallest", "*.WAV"))[0],
-                glob.glob(join("..", "testFiles", "biggest", "*.WAV"))[0]]
+    # Get all the WAV files under ../src
+    wavFiles = glob.glob(join("..", "src", "f2cnn", "*", "*.WAV"))
+    if not wavFiles:
+        print("NO WAV FILES FOUND")
+        exit(-1)
+    print("FREQS:", CENTER_FREQUENCIES)
+    print("COEFS:", FILTERBANK_COEFFICIENTS)
+    # # Test WavFiles
+    # wavFiles = ["../src/f2cnn/TEST/DR1.FELC0.SI1386.WAV",
+    #             glob.glob(join("..", "testFiles", "smallest", "*.WAV"))[0],
+    #             glob.glob(join("..", "testFiles", "biggest", "*.WAV"))[0]]
     print(wavFiles)
 
     # Usage of multiprocessing, to reduce computing time

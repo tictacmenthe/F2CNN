@@ -23,7 +23,7 @@ from shutil import copyfile
 SEP = '/'
 DIRSRC = "../src/"
 DIRVTR = DIRSRC + "vtr_formants"
-DIRTIM = DIRSRC + "timit/TIMIT"
+DIRTIM = DIRSRC + "timit"
 DIROUTPUT = DIRSRC + 'f2cnn'
 
 # 0=TIMIT, 1=VTR
@@ -64,7 +64,7 @@ def moveFilesToPosition(files):
         inTimit = '/'.join(splitext(f)[0].split('/')[3:]).upper()
         upperFiles.append(inTimit)
     upperFiles = set(upperFiles)
-    for f in upperFiles:
+    for i,f in enumerate(upperFiles):
         path = DIRTIM + SEP + f + '.WAV'
         f = f.split('/')
         f = f[0] + SEP + f[1] + '.' + f[2] + '.' + f[3]
@@ -72,7 +72,7 @@ def moveFilesToPosition(files):
         if isfile(path):
             if not exists(dirname(newPath)):
                 makedirs(dirname(newPath))
-            # print('Copying',path,'to\n',newPath)
+            print(i,'Copying',path,'to\n',newPath)
             copyfile(path, newPath)
     # Get the other files
     splittedFileNames = splitVTRFileNames(files)
