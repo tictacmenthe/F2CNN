@@ -13,7 +13,7 @@ resources/f2cnn/TRAIN/*
 .idea
 Pictures/
 .~lock*
-lib64/
+lib64
 pyvenv.cfg
 bin/
 
