@@ -78,11 +78,11 @@ def main():
     print("Extraction of FB Files...")
     TotalTime = time.time()
 
-    # # Get all the WAV files under ../src
-    # fbFiles = glob.glob(join("..","src","f2cnn","*","*.FB"))
+    # # Get all the WAV files under ../resources
+    # fbFiles = glob.glob(join("..","resources","f2cnn","*","*.FB"))
 
     # Test WavFiles
-    fbFiles = ["../src/f2cnn/TEST/DR1.FELC0.SI1386.FB"]
+    fbFiles = ["../resources/f2cnn/TEST/DR1.FELC0.SI1386.FB"]
     # glob.glob(join("..", "testFiles", "smallest", "*.FB"))[0],
     # glob.glob(join("..", "testFiles", "biggest", "*.FB"))[0]]
 

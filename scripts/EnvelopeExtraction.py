@@ -91,7 +91,7 @@ def ExtractEnvelope(gfbFileName):
             # Save the envelope to the right output channel
             filteredEnvelope[i] = filtered_envelope_values
 
-    PlotEnvelopeSpectrogram(unfilteredEnvelope, splitext(splitext(gfbFileName)[0])[0])
+    # PlotEnvelopeSpectrogram(unfilteredEnvelope, splitext(splitext(gfbFileName)[0])[0])
     print(gfbFileName, "done !")
     if LP_FILTERING:
         return filteredEnvelope
@@ -134,11 +134,11 @@ def main():
     # numpy.set_printoptions(threshold=numpy.inf, suppress=True)
     TotalTime = time.time()
 
-    # # Get all the GFB.npy files under ../src/fcnn
-    # gfbFiles = glob.glob(join("..", "src", "f2cnn", "*", "*.GFB.npy"))
+    # Get all the GFB.npy files under ../resources/fcnn
+    gfbFiles = glob.glob(join("..", "resources", "f2cnn", "*", "*.GFB.npy"))
 
     # Test WavFiles
-    gfbFiles = ["../src/f2cnn/TEST/DR1.FELC0.SI1386.GFB.npy"]  # ,
+    # gfbFiles = ["../resources/f2cnn/TEST/DR1.FELC0.SI1386.GFB.npy" ,
     # glob.glob(join("..", "testFiles", "smallest", "*.GFB.npy"))[0],
     # glob.glob(join("..", "testFiles", "biggest" , "*.GFB.npy"))[0]]
     print(gfbFiles)

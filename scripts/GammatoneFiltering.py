@@ -17,10 +17,9 @@ from multiprocessing.pool import Pool
 from os import remove
 from os.path import splitext, join
 from shutil import copyfile
-import matplotlib.pyplot as plt
 import numpy
 
-from libs.gammatone import filters
+from gammatone import filters
 
 # ##### PREPARATION OF FILTERBANK
 # CENTER FREQUENCIES ON ERB SCALE
@@ -70,6 +69,7 @@ def convertWavFile(filename):
     copyfile(filename, newname)
     remove(filename)
     subprocess.call(['ffmpeg', '-i', newname, filename])
+    remove(newname)
 
 
 def saveGFBMatrix(filename, matrix):
@@ -109,15 +109,15 @@ def main():
 
     TotalTime = time.time()
 
-    # Get all the WAV files under ../src
-    wavFiles = glob.glob(join("..", "src", "f2cnn", "*", "*.WAV"))
+    # Get all the WAV files under ../resources
+    wavFiles = glob.glob(join("..", "resources", "f2cnn", "*", "*.WAV"))
     if not wavFiles:
         print("NO WAV FILES FOUND")
         exit(-1)
     print("FREQS:", CENTER_FREQUENCIES)
     print("COEFS:", FILTERBANK_COEFFICIENTS)
     # # Test WavFiles
-    # wavFiles = ["../src/f2cnn/TEST/DR1.FELC0.SI1386.WAV",
+    # wavFiles = ["../resources/f2cnn/TEST/DR1.FELC0.SI1386.WAV",
     #             glob.glob(join("..", "testFiles", "smallest", "*.WAV"))[0],
     #             glob.glob(join("..", "testFiles", "biggest", "*.WAV"))[0]]
     print(wavFiles)

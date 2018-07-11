@@ -5,7 +5,7 @@
 Required structure:
 root/
 -scripts/ -> This file's directory
--src/
+-resources/
 --f2cnn/ -> The output directory
 ---TRAIN/
 ---TEST/
@@ -21,9 +21,9 @@ from os.path import isfile, splitext, dirname, exists
 from shutil import copyfile
 
 SEP = '/'
-DIRSRC = "../src/"
+DIRSRC = "../resources/"
 DIRVTR = DIRSRC + "vtr_formants"
-DIRTIM = DIRSRC + "timit"
+DIRTIM = DIRSRC + "TIMIT"
 DIROUTPUT = DIRSRC + 'f2cnn'
 
 # 0=TIMIT, 1=VTR
@@ -74,6 +74,8 @@ def moveFilesToPosition(files):
                 makedirs(dirname(newPath))
             print(i,'Copying',path,'to\n',newPath)
             copyfile(path, newPath)
+        else:
+            print("DOESNT EXIST",path)
     # Get the other files
     splittedFileNames = splitVTRFileNames(files)
     for src, dst in zip(files, splittedFileNames):
