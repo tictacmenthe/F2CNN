@@ -3,16 +3,34 @@
 
 archives/
 testFiles/
-src/timit/*
-src/TIMIT/*
-src/vtr_formants/*
-src/f2cnn/TEST/*
-src/f2cnn/TRAIN/*
-!src/f2cnn/TEST/.gitkeep
-!src/f2cnn/TRAIN/.gitkeep
+resources/timit/*
+resources/TIMIT/*
+resources/vtr_formants/*
+resources/f2cnn/TEST/*
+resources/f2cnn/TRAIN/*
+!resources/f2cnn/TEST/.gitkeep
+!resources/f2cnn/TRAIN/.gitkeep
 .idea
 Pictures/
 .~lock*
+lib64/
+pyvenv.cfg
+bin/
+
+
+# Created by https://www.gitignore.io/api/jupyternotebook
+
+### JupyterNotebook ###
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Remove previous ipynb_checkpoints
+#   git rm -r .ipynb_checkpoints/
+#
+
+
+# End of https://www.gitignore.io/api/jupyternotebook
+
 
 # Created by https://www.gitignore.io/api/python,pycharm
 
