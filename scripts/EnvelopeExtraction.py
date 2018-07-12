@@ -61,6 +61,7 @@ def lowPassFilter(signal, freq):
     """
     # The A et B parameter arrays of the filter
     B, A = butter(1, freq / (SAMPLING_RATE / 2), 'low')
+    print(B,A)
     return lfilter(B, A, signal, axis=0)
 
 
@@ -134,13 +135,12 @@ def main():
     # numpy.set_printoptions(threshold=numpy.inf, suppress=True)
     TotalTime = time.time()
 
-    # Get all the GFB.npy files under ../resources/fcnn
-    gfbFiles = glob.glob(join("..", "resources", "f2cnn", "*", "*.GFB.npy"))
+    # # Get all the GFB.npy files under ../resources/fcnn
+    # gfbFiles = glob.glob(join("..", "resources", "f2cnn", "*", "*.GFB.npy"))
 
-    # Test WavFiles
-    # gfbFiles = ["../resources/f2cnn/TEST/DR1.FELC0.SI1386.GFB.npy" ,
-    # glob.glob(join("..", "testFiles", "smallest", "*.GFB.npy"))[0],
-    # glob.glob(join("..", "testFiles", "biggest" , "*.GFB.npy"))[0]]
+    # Test Files
+    gfbFiles = glob.glob(join("..", "testFiles", "*.GFB.npy"))
+
     print(gfbFiles)
     if not gfbFiles:
         print("NO GFB.npy FILES FOUND")

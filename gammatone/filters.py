@@ -49,7 +49,6 @@ def erb_point(low_freq, high_freq, fraction):
         ) *
         (high_freq + ear_q*min_bw)
     )
-    
     return erb_point
 
 

@@ -1,6 +1,7 @@
 """
 
-This file allows the reading of VTR Formant database's .FB files, containing the F1,F2,F3 and F3 formants' frequencies and bandwiths.
+This file allows the reading of VTR Formant database's .FB files, containing the F1,F2,F3 and F3 formants' frequencies
+and bandwiths.
 The .FB files should be organised like the output of the OrganiseFiles.py script,
 inside ../f2cnn/TEST OR TRAIN/ with the names DRr.reader.sentence.FB, with r the regionm reader the ID of the reader
 and sentence the ID of the sentence read.
@@ -11,9 +12,8 @@ The output is a numpy.ndarray of size 8*nb_frames, with bn_frames being one of t
 import glob
 import struct
 import time
-from multiprocessing.pool import Pool
 from os.path import join
-import matplotlib.pyplot as plt
+
 import numpy
 
 from scripts.GammatoneFiltering import CENTER_FREQUENCIES
@@ -25,14 +25,10 @@ def printBytes(byteStr):
 
 
 def ExtractFBFile(fbFilename):
-    outputMatrix = None
-    sampPeriod = 0
-
     # The file to read from, in binary reading mode
     with open(fbFilename, 'rb') as fbFile:
         # Reading the headers, with nb of frames and periods
         dat = fbFile.read(4)
-        print(dat)
         nFrame = struct.unpack('>i', dat)[0]
         dat = fbFile.read(4)
         sampPeriod = struct.unpack('>i', dat)[0]
@@ -69,7 +65,7 @@ def extractF2Frequencies(fbFilename):
     :return: array of F2 frequencies in Hz, and the sample period of the file
     """
     matrix, sampPeriod = ExtractFBFile(fbFilename)
-    return matrix[:,1],sampPeriod
+    return matrix[:, 1], sampPeriod
 
 
 def main():
@@ -82,8 +78,7 @@ def main():
     # fbFiles = glob.glob(join("..","resources","f2cnn","*","*.FB"))
 
     # Test WavFiles
-    fbFiles = ["../resources/f2cnn/TEST/DR1.FELC0.SI1386.FB"]
-    # glob.glob(join("..", "testFiles", "smallest", "*.FB"))[0],
+    fbFiles = glob.glob(join("..", "testFiles", "*.FB"))
     # glob.glob(join("..", "testFiles", "biggest", "*.FB"))[0]]
 
     if not fbFiles:
@@ -91,6 +86,7 @@ def main():
         exit(-1)
     print(fbFiles)
     print(CENTER_FREQUENCIES)
+
     ExtractFBFile(fbFiles[0])
 
     print('              Total time:', time.time() - TotalTime)

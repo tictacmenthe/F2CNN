@@ -26,7 +26,8 @@ from gammatone import filters
 CENTER_FREQUENCIES = filters.centre_freqs(16000, 128, 100)
 # Filter coefficient for a Gammatone filterbank
 FILTERBANK_COEFFICIENTS = filters.make_erb_filters(16000, CENTER_FREQUENCIES)
-
+print(CENTER_FREQUENCIES)
+exit()
 
 def getFilteredOutput(filename):
     """
@@ -109,17 +110,18 @@ def main():
 
     TotalTime = time.time()
 
-    # Get all the WAV files under ../resources
-    wavFiles = glob.glob(join("..", "resources", "f2cnn", "*", "*.WAV"))
+    # # Get all the WAV files under ../resources
+    # wavFiles = glob.glob(join("..", "resources", "f2cnn", "*", "*.WAV"))
+
+    # Test WavFiles
+    wavFiles = glob.glob(join("..", "testFiles","*.WAV"))
+
     if not wavFiles:
         print("NO WAV FILES FOUND")
         exit(-1)
     print("FREQS:", CENTER_FREQUENCIES)
     print("COEFS:", FILTERBANK_COEFFICIENTS)
-    # # Test WavFiles
-    # wavFiles = ["../resources/f2cnn/TEST/DR1.FELC0.SI1386.WAV",
-    #             glob.glob(join("..", "testFiles", "smallest", "*.WAV"))[0],
-    #             glob.glob(join("..", "testFiles", "biggest", "*.WAV"))[0]]
+
     print(wavFiles)
 
     # Usage of multiprocessing, to reduce computing time
