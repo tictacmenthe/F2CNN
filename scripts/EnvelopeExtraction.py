@@ -8,19 +8,16 @@ from __future__ import division
 
 import glob
 import os
-import struct
 import time
-import wave
+from multiprocessing.pool import Pool
 from os.path import splitext, join
 
-from multiprocessing.pool import Pool
-import numpy
-import scipy
-from scipy.signal import hilbert, butter, lfilter
 import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm, NoNorm
-from scripts.FBFileReader import extractF2Frequencies
-from scripts.GammatoneFiltering import convertWavFile
+import numpy
+from matplotlib.colors import LogNorm
+from scipy.signal import hilbert, butter, lfilter
+
+from scripts.FBFileReader import GetF2Frequencies
 
 SAMPLING_RATE = 16000
 CUTOFF = 100
@@ -48,10 +45,6 @@ def paddedHilbert(signal):
     return result
 
 
-def unpaddedHilbert(signal):
-    return hilbert(signal)
-
-
 def lowPassFilter(signal, freq):
     """
     Applies a butterworth low pass filter to the signal
@@ -74,10 +67,7 @@ def ExtractEnvelope(gfbFileName):
     # Load the matrix
     matrix = numpy.load(gfbFileName)
     # Matrix that will be saved
-    if LP_FILTERING:
-        filteredEnvelope = numpy.zeros(matrix.shape)
-    else:
-        unfilteredEnvelope = numpy.zeros(matrix.shape)
+    envelope=numpy.zeros(matrix.shape)
     # Computing the envelope and filtering it
     for i, signal in enumerate(matrix):
         # print(npyfile,i)
@@ -85,19 +75,16 @@ def ExtractEnvelope(gfbFileName):
         analytic_signal = paddedHilbert(signal)
         amplitude_envelope = numpy.abs(analytic_signal)
         if not LP_FILTERING:
-            unfilteredEnvelope[i] = amplitude_envelope
+            envelope[i] = amplitude_envelope
         else:
             # Low Pass Filter with Butterworth 'CUTOFF' Hz filter
             filtered_envelope_values = lowPassFilter(amplitude_envelope, CUTOFF)
             # Save the envelope to the right output channel
-            filteredEnvelope[i] = filtered_envelope_values
+            envelope[i] = filtered_envelope_values
 
-    # PlotEnvelopeSpectrogram(unfilteredEnvelope, splitext(splitext(gfbFileName)[0])[0])
+    # PlotEnvelopeSpectrogram(envelope, splitext(splitext(gfbFileName)[0])[0])
     print(gfbFileName, "done !")
-    if LP_FILTERING:
-        return filteredEnvelope
-    else:
-        return unfilteredEnvelope
+    return envelope
 
 
 def SaveEnvelope(matrix, gfbFileName):
@@ -119,7 +106,7 @@ def PlotEnvelopeSpectrogram(matrix, filename):
     # Plotting the image, with logarithmic normalization
     plt.imshow(matrix, norm=LogNorm(), aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
     # Get the VTR F2 Formants from the database
-    F2Array, sampPeriod = extractF2Frequencies(filename + ".FB")
+    F2Array, sampPeriod = GetF2Frequencies(filename + ".FB")
     t = [i * sampPeriod / 1000000. for i in range(len(F2Array))]
     # TODO: Splitting by / is not platform independent
     file = filename.split('/')

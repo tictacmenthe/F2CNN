@@ -58,7 +58,7 @@ def ExtractFBFile(fbFilename):
     return outputMatrix, sampPeriod
 
 
-def extractF2Frequencies(fbFilename):
+def GetF2Frequencies(fbFilename):
     """
     Extracts the F2 formant from data of VTR formants database
     :param fbFilename: path to the file to be used
@@ -66,6 +66,16 @@ def extractF2Frequencies(fbFilename):
     """
     matrix, sampPeriod = ExtractFBFile(fbFilename)
     return matrix[:, 1], sampPeriod
+
+def GetF2FrequenciesAround(array, timepoint, radius):
+    start,end=timepoint/160 - radius, timepoint/160 + radius
+    if start<0 or end >= len(array):
+        print("ERROR: WRONG RANGE IN GETF2FREQUENCIESAROUND IN ARRAY:\n",array,"\nAT TIME AND RADIUS",timepoint,radius)
+        print("INF" if start<0 else "SUP")
+        print(len(array))
+        exit(-1)
+    start,end=int(start),int(end)+1
+    return array[start:end]
 
 
 def main():
@@ -85,9 +95,9 @@ def main():
         print("NO FB FILES FOUND")
         exit(-1)
     print(fbFiles)
-    print(CENTER_FREQUENCIES)
-
-    ExtractFBFile(fbFiles[0])
+    array, sampperiod = GetF2Frequencies(fbFiles[0])
+    print(sampperiod)
+    print(GetF2FrequenciesAround(array, 800, 5))
 
     print('              Total time:', time.time() - TotalTime)
 

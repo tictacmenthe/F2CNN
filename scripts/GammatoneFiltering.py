@@ -26,8 +26,6 @@ from gammatone import filters
 CENTER_FREQUENCIES = filters.centre_freqs(16000, 128, 100)
 # Filter coefficient for a Gammatone filterbank
 FILTERBANK_COEFFICIENTS = filters.make_erb_filters(16000, CENTER_FREQUENCIES)
-print(CENTER_FREQUENCIES)
-exit()
 
 def getFilteredOutput(filename):
     """
