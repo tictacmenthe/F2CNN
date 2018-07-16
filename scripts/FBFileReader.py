@@ -24,7 +24,7 @@ def printBytes(byteStr):
     print('\n')
 
 
-def ExtractFBFile(fbFilename):
+def ExtractFBFile(fbFilename, verbose=False):
     # The file to read from, in binary reading mode
     with open(fbFilename, 'rb') as fbFile:
         # Reading the headers, with nb of frames and periods
@@ -37,12 +37,12 @@ def ExtractFBFile(fbFilename):
         nComps = sampSize / 4
         dat = fbFile.read(2)
         fileType = struct.unpack('>h', dat)[0]
-
-        print('N_SAMPLES=', nFrame)
-        print('SAMP_PERIOD=', sampPeriod)
-        print('SAMP_SIZE=', sampSize)
-        print('NUM_COMPS=', nComps)
-        print('FILE_TYPE=', fileType)
+        if verbose:
+            print('N_SAMPLES=', nFrame)
+            print('SAMP_PERIOD=', sampPeriod)
+            print('SAMP_SIZE=', sampSize)
+            print('NUM_COMPS=', nComps)
+            print('FILE_TYPE=', fileType)
 
         # The output matrix containing the data of the .FB file without the headers
         outputMatrix = numpy.zeros([nFrame, 8])

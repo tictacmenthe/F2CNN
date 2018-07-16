@@ -25,12 +25,13 @@ def main():
 
     print(envFiles)
 
-    trainingData = []
+    inputData = []
     for i, file in enumerate(envFiles):
         print(i,file)
         envelopes = numpy.load(file)
-        nb = int((len(envelopes[0]) / SAMPLING_FREQ - 0.1) / 0.01)
-        print(len(envelopes[0]), nb)
+
+        # Number of timepoints for measures
+        nb = int((len(envelopes[0]) / SAMPLING_FREQ - 0.11) / 0.01)
 
         # Discretisation of the values for each entry required
         currentStep = START
@@ -45,14 +46,13 @@ def main():
             for index in entry:
                 valueArray=[channel[index] for channel in envelopes] # All the values of env at the steps' timepoint
                 entryMatrix.append(valueArray)
-            trainingData.append(entryMatrix)
+            inputData.append(entryMatrix)
         print(file, "done")
-    sizes=(len(trainingData),len(trainingData[0]),len(trainingData[0][0]))
+    sizes=(len(inputData),len(inputData[0]),len(inputData[0][0]))
     print(sizes)
-    print(trainingData)
-    trainingData=numpy.array(trainingData, dtype=numpy.float32)
-    print(trainingData.shape)
-    numpy.save("../inputData/training_data",trainingData)
+    inputData=numpy.array(inputData, dtype=numpy.float32)
+    print(inputData.shape)
+    numpy.save("../trainingData/input_data",inputData)
     print('                Total time:', time.time() - TotalTime)
 
 
