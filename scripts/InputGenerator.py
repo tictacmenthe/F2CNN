@@ -14,10 +14,11 @@ def main():
 
     # Get all the ENV1.npy files under ../resources
     envFiles = glob.glob(join("..", "resources", "f2cnn", "*", "*.ENV1.npy"))
-    envFiles = sorted(envFiles)
 
     # # Test files
     # envFiles = glob.glob(join("..", "testFiles","*.ENV1.npy"))
+
+    envFiles = sorted(envFiles)
 
     if not envFiles:
         print("NO ENV1.npy FILES FOUND")

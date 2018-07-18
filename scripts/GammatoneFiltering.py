@@ -108,17 +108,17 @@ def main():
 
     TotalTime = time.time()
 
-    # # Get all the WAV files under ../resources
-    # wavFiles = glob.glob(join("..", "resources", "f2cnn", "*", "*.WAV"))
+    # Get all the WAV files under ../resources
+    wavFiles = glob.glob(join("..", "resources", "f2cnn", "*", "*.WAV"))
 
-    # Test WavFiles
-    wavFiles = glob.glob(join("..", "testFiles","*.WAV"))
+    # # Test WavFiles
+    # wavFiles = glob.glob(join("..", "testFiles","*.WAV"))
 
     if not wavFiles:
         print("NO WAV FILES FOUND")
         exit(-1)
-    print("FREQS:", CENTER_FREQUENCIES)
-    print("COEFS:", FILTERBANK_COEFFICIENTS)
+    # print("FREQS:", CENTER_FREQUENCIES)
+    # print("COEFS:", FILTERBANK_COEFFICIENTS)
 
     print(wavFiles)
 
