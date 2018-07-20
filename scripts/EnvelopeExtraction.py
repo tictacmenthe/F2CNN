@@ -122,16 +122,17 @@ def main():
     # numpy.set_printoptions(threshold=numpy.inf, suppress=True)
     TotalTime = time.time()
 
-    # # Get all the GFB.npy files under ../resources/fcnn
-    # gfbFiles = glob.glob(join("..", "resources", "f2cnn", "*", "*.GFB.npy"))
+    # Get all the GFB.npy files under ../resources/fcnn
+    gfbFiles = glob.glob(join("..", "resources", "f2cnn", "*", "*.GFB.npy"))
 
-    # Test Files
-    gfbFiles = glob.glob(join("..", "testFiles", "*.GFB.npy"))
+    # # Test Files
+    # gfbFiles = glob.glob(join("..", "testFiles", "*.GFB.npy"))
 
-    print(gfbFiles)
     if not gfbFiles:
         print("NO GFB.npy FILES FOUND")
         exit(-1)
+    print(gfbFiles)
+
     # Usage of multiprocessing, to reduce computing time
     proc = 4
     multiproc_pool = Pool(processes=proc)
