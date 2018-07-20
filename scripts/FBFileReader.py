@@ -16,7 +16,7 @@ from os.path import join
 
 import numpy
 
-from scripts.GammatoneFiltering import CENTER_FREQUENCIES
+from .GammatoneFiltering import CENTER_FREQUENCIES
 
 
 def printBytes(byteStr):

@@ -17,14 +17,13 @@ root/
 """
 
 from os import listdir, makedirs
-from os.path import isfile, splitext, dirname, exists
+from os.path import isfile, splitext, dirname, exists, join, split
 from shutil import copyfile
 
-SEP = '/'
-DIRSRC = "../resources/"
-DIRVTR = DIRSRC + "vtr_formants"
-DIRTIM = DIRSRC + "TIMIT"
-DIROUTPUT = DIRSRC + 'f2cnn'
+DIRSRC = "resources"
+DIRVTR = join(DIRSRC, "vtr_formants")
+DIRTIM = join(DIRSRC, "TIMIT")
+DIROUTPUT = join(DIRSRC, "f2cnn")
 
 # 0=TIMIT, 1=VTR
 REGNUMTEST = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -35,16 +34,15 @@ CASE = ['TRAIN', 'TEST']
 
 def getVTRFileNames():
     output = []
-
     for i, c in enumerate(CASE):
         for r in REGNUM[i]:
-            reg_path = DIRVTR + SEP + c + SEP + 'dr' + str(r)
+            reg_path = join(DIRVTR, c, 'dr' + str(r))
             people = listdir(reg_path)
             for p in people:
-                p_path = reg_path + SEP + p
+                p_path = join(reg_path, p)
                 files = listdir(p_path)
                 for f in files:
-                    filepath = p_path + SEP + f
+                    filepath = join(p_path,f)
                     if isfile(filepath):
                         output.append(filepath)
     return output
@@ -53,7 +51,7 @@ def getVTRFileNames():
 def splitVTRFileNames(files):
     splittedFileNames = []
     for name in files:
-        splittedFileNames.append(name.upper().split('/')[3:])
+        splittedFileNames.append(split(name.upper())[3:])
     return splittedFileNames
 
 
@@ -61,14 +59,17 @@ def moveFilesToPosition(files):
     # Get the WAV files from timit
     upperFiles = []
     for f in files:
-        inTimit = '/'.join(splitext(f)[0].split('/')[3:]).upper()
+        print(split(splitext(f)[0]))
+        inTimit = join(split(splitext(f)[0])[3:]).upper()
+        print("INTIMIT",inTimit)
         upperFiles.append(inTimit)
     upperFiles = set(upperFiles)
     for i,f in enumerate(upperFiles):
-        path = DIRTIM + SEP + f + '.WAV'
-        f = f.split('/')
-        f = f[0] + SEP + f[1] + '.' + f[2] + '.' + f[3]
-        newPath = DIROUTPUT + SEP + f + '.WAV'
+        path = join(DIRTIM,f + '.WAV')
+        f = split(f)
+        # The output filename is REGION.PERSON.SENTENCE.EXTENSION
+        f = join(f[0],f[1] + '.' + f[2] + '.' + f[3])
+        newPath = join(DIROUTPUT,f + '.WAV')
         if isfile(path):
             if not exists(dirname(newPath)):
                 makedirs(dirname(newPath))
@@ -79,7 +80,7 @@ def moveFilesToPosition(files):
     # Get the other files
     splittedFileNames = splitVTRFileNames(files)
     for src, dst in zip(files, splittedFileNames):
-        dst = DIROUTPUT + SEP + dst[0] + SEP + dst[1] + '.' + dst[2] + '.' + dst[3]
+        dst = join(DIROUTPUT,dst[0],dst[1] + '.' + dst[2] + '.' + dst[3])
         print('Copying', src, 'to\n', dst)
         copyfile(src, dst)
 

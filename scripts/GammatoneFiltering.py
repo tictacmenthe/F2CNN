@@ -27,7 +27,7 @@ CENTER_FREQUENCIES = filters.centre_freqs(16000, 128, 100)
 # Filter coefficient for a Gammatone filterbank
 FILTERBANK_COEFFICIENTS = filters.make_erb_filters(16000, CENTER_FREQUENCIES)
 
-def getFilteredOutput(filename):
+def getFilteredOutputFromFile(filename):
     """
     Computes the output of a gammatone filterbank applied to the WAV file 'filename'
     :param filename: path to a WAV file
@@ -51,13 +51,15 @@ def getFilteredOutput(filename):
     # plt.plot(t, wavList)
     # plt.show()
 
+    return getFilteredOutputFromArray(wavFile.getnframes(), wavList)
+
+
+def getFilteredOutputFromArray(nframes, array):
     # gammatone library needs a numpy array
-
     # Application of the filterbank to a vector
-    filteredMatrix = filters.erb_filterbank(wavList,
+    filteredMatrix = filters.erb_filterbank(array,
                                             FILTERBANK_COEFFICIENTS)  # Matrix of wavFile.getnframes() X 128 real values
-    return wavFile.getnframes(), filteredMatrix
-
+    return nframes, filteredMatrix
 
 def convertWavFile(filename):
     """
@@ -84,7 +86,7 @@ def GammatoneFiltering(wavFile):
 
     # Compute the filterbank output
     startTime = time.time()
-    nbframes, outputMatrix = getFilteredOutput(wavFile)
+    nbframes, outputMatrix = getFilteredOutputFromFile(wavFile)
     duration = time.time() - startTime
     print(gfbFilename)
     print('        Time for filtering:', duration)
@@ -102,25 +104,20 @@ def GammatoneFiltering(wavFile):
     print('           Time for saving:', duration)
 
 
-def main():
-    # # In case you need to print numpy outputs:
-    # numpy.set_printoptions(threshold=numpy.inf, suppress=True)
-
+def FilterAllOrganisedFiles():
     TotalTime = time.time()
 
-    # # Get all the WAV files under ../resources
-    # wavFiles = glob.glob(join("..", "resources", "f2cnn", "*", "*.WAV"))
+    # Get all the WAV files under resources
+    wavFiles = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))
 
-    # Test WavFiles
-    wavFiles = glob.glob(join("..", "testFiles","*.WAV"))
+    # # Test WavFiles
+    # wavFiles = glob.glob(join("testFiles","*.WAV"))
 
     if not wavFiles:
         print("NO WAV FILES FOUND")
         exit(-1)
-    print("FREQS:", CENTER_FREQUENCIES)
-    print("COEFS:", FILTERBANK_COEFFICIENTS)
 
-    print(wavFiles)
+    print(len(wavFiles),"files found")
 
     # Usage of multiprocessing, to reduce computing time
     proc = 4
@@ -131,4 +128,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    FilterAllOrganisedFiles()
