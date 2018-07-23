@@ -17,7 +17,9 @@ import numpy
 from matplotlib.colors import LogNorm
 from scipy.signal import hilbert, butter, lfilter
 
-from scripts.FBFileReader import GetF2Frequencies
+from .GammatoneFiltering import CENTER_FREQUENCIES
+from .FBFileReader import GetF2Frequencies
+
 
 SAMPLING_RATE = 16000
 CUTOFF = 100
@@ -82,7 +84,7 @@ def ExtractEnvelope(gfbFileName):
             # Save the envelope to the right output channel
             envelope[i] = filtered_envelope_values
 
-    # PlotEnvelopeSpectrogram(envelope, splitext(splitext(gfbFileName)[0])[0])
+    PlotEnvelopeSpectrogram(envelope, splitext(splitext(gfbFileName)[0])[0])
     print(gfbFileName, "done !")
     return envelope
 
@@ -102,9 +104,41 @@ def ExtractAndSaveEnvelope(gfbFileName):
     SaveEnvelope(ExtractEnvelope(gfbFileName), gfbFileName)
 
 
+def ERBScale(f):
+    return 24.7*(4.37*f*0.001+1)
+
+
+def GetNewHeightERB(matrix):
+    height=0
+    ratios=[]
+    base=ERBScale(CENTER_FREQUENCIES[-1])
+    for i, line in enumerate(matrix):
+        erb=ERBScale(CENTER_FREQUENCIES[i])
+        ratio=int(round(erb/base))
+        ratios.append(ratio)
+        height+=ratio
+    return height, ratios
+
+
 def PlotEnvelopeSpectrogram(matrix, filename):
     # Plotting the image, with logarithmic normalization
-    plt.imshow(matrix, norm=LogNorm(), aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
+    h, ratios=GetNewHeightERB(matrix)
+    image=numpy.zeros([h,matrix.shape[1]])
+    print(image.shape)
+    i=0
+    r=0
+    print(ratios)
+    for line in matrix:
+        j=0
+        for j in range(ratios[r]):
+            image[i+j]=line
+        print(i, i + j)
+
+        i+=j+1
+        r+=1
+    plt.imshow(image, norm=LogNorm(), aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
+
+    # plt.pcolormesh(matrix)
     # Get the VTR F2 Formants from the database
     F2Array, sampPeriod = GetF2Frequencies(filename + ".FB")
     t = [i * sampPeriod / 1000000. for i in range(len(F2Array))]
@@ -122,11 +156,11 @@ def main():
     # numpy.set_printoptions(threshold=numpy.inf, suppress=True)
     TotalTime = time.time()
 
-    # Get all the GFB.npy files under ../resources/fcnn
-    gfbFiles = glob.glob(join("..", "resources", "f2cnn", "*", "*.GFB.npy"))
+    # # Get all the GFB.npy files under resources/fcnn
+    # gfbFiles = glob.glob(join("resources", "f2cnn", "*", "*.GFB.npy"))
 
-    # # Test Files
-    # gfbFiles = glob.glob(join("..", "testFiles", "*.GFB.npy"))
+    # Test Files
+    gfbFiles = glob.glob(join( "testFiles", "*.GFB.npy"))
 
     if not gfbFiles:
         print("NO GFB.npy FILES FOUND")
