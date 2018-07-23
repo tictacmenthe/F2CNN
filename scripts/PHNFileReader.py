@@ -1,20 +1,12 @@
 """
 
-This file allows the reading of VTR Formant database's .FB files, containing the F1,F2,F3 and F3 formants' frequencies
-and bandwiths.
-The .FB files should be organised like the output of the OrganiseFiles.py script,
-inside ../f2cnn/TEST OR TRAIN/ with the names DRr.reader.sentence.FB, with r the regionm reader the ID of the reader
-and sentence the ID of the sentence read.
-The output is a numpy.ndarray of size 8*nb_frames, with bn_frames being one of the header parameters of the .FB file.
-
+This file includes funcitons allowing to read phonemes from TIMIT database's .PHN files
 """
 
 import csv
-import glob
-import time
-from os.path import join
 
-import numpy
+VOWELS = ["iy", "ih", "eh", "ey", "ae", "aa", "aw", "ay", "ah", "ao",
+          "oy", "ow", "uh", "uw", "ux", "er", "ax", "ix", "axr", "ax-h"]
 
 
 def ExtractPhonemes(phnFilename):
@@ -27,34 +19,13 @@ def ExtractPhonemes(phnFilename):
 
 
 def GetPhonemeAt(phnFilename, timepoint):
+    """
+    Returns the current phoneme at a TIMIT .WAV file frame
+    :param phnFilename: the path to the .WAV file
+    :param timepoint: the frame in the TIMIT .WAV file
+    :return: the actual phoneme
+    """
     data = ExtractPhonemes(phnFilename)
     for line in data:
         if line[0] <= timepoint <= line[1]:
             return line[2]
-
-
-def main():
-    # # In case you need to print numpy outputs:
-    numpy.set_printoptions(threshold=numpy.inf, suppress=True)
-    print("Extraction of FB Files...")
-    TotalTime = time.time()
-
-    # # Get all the PHN files under ../resources
-    # phnFiles = glob.glob(join("..","resources","f2cnn","*","*.PHN"))
-
-    # Test PHN files
-    phnFiles = glob.glob(join("..", "testFiles", "*.PHN"))
-
-    if not phnFiles:
-        print("NO FB FILES FOUND")
-        exit(-1)
-    print(phnFiles)
-
-    ph = GetPhonemeAt(phnFiles[0], 19000)
-    print(ph)
-
-    print('              Total time:', time.time() - TotalTime)
-
-
-if __name__ == '__main__':
-    main()

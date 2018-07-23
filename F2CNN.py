@@ -7,7 +7,6 @@ from scripts.LabelDataGenerator import GenerateLabelData
 from scripts.InputGenerator import GenerateInputData
 
 
-
 def All(testMode):
     """
     Does all the treatments required for the training
@@ -34,7 +33,13 @@ def main():
     subparsers = parser.add_subparsers()
 
     parser_prepare = subparsers.add_parser('prepare', help='runs the command given in argument')
-    parser_prepare.add_argument('command', choices=FUNCTIONS.keys())
+    parser_prepare.add_argument('command', choices=FUNCTIONS.keys(),
+                                help="""
+                                Data processing commands: organise  the files as needed for the 
+                                rest(Check OrganiseFiles.py documentation), filter the files with FilterBank and 
+                                save its outputs, envelope extracts the filtered file's envelopes and saves them,
+                                label generated label data, input generates input data, all does all of the above.
+                                """)
     parser_prepare.add_argument('--test','-t', action='store_true')
 
     args=parser.parse_args()

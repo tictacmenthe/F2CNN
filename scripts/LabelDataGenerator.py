@@ -10,15 +10,14 @@ import csv
 import glob
 import time
 import wave
-from os.path import join, split, splitext
+from os import mkdir
+from os.path import join, split, splitext, isdir
+
 import numpy
 from scipy.stats import pearsonr
 
 from .FBFileReader import GetF2Frequencies, GetF2FrequenciesAround
-from .PHNFileReader import GetPhonemeAt
-
-vowels = ["iy", "ih", "eh", "ey", "ae", "aa", "aw", "ay", "ah", "ao",
-          "oy", "ow", "uh", "uw", "ux", "er", "ax", "ix", "axr", "ax-h"]
+from .PHNFileReader import GetPhonemeAt, VOWELS
 
 
 def GenerateLabelData(testMode):
@@ -35,6 +34,8 @@ def GenerateLabelData(testMode):
         # Get all the files under resources
         filenames = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))
 
+    print("\n###############################\nGenerating Label Data from files in '{}'.".format(split(filenames[0])[0]))
+
     # Alphanumeric order
     filenames = sorted(filenames)
 
@@ -42,14 +43,14 @@ def GenerateLabelData(testMode):
         print("NO FILES FOUND")
         exit(-1)
 
-    print(filenames)
+    print(len(filenames), "files found")
 
     vowelCounter = 0
     csvLines = []
 
     # Get the data into a list of lists for the CSV
     for i, file in enumerate(filenames):
-        print(i, file)
+        print(i, "Reading:\t{}".format(file))
 
         # Get number of points
         wavFile = wave.open(file, 'r')
@@ -72,14 +73,14 @@ def GenerateLabelData(testMode):
 
         for step in steps:
             phoneme = GetPhonemeAt(splitext(file)[0] + '.PHN', step[5])
-            if phoneme not in vowels:
+            if phoneme not in VOWELS:
                 continue
             vowelCounter += 1
             entry = [region, speaker, sentence, phoneme, step[5]]
             F2Values = numpy.array(GetF2FrequenciesAround(F2Array, step[5], 5))
 
             # Least Squares Method for linear regression of the F2 values
-            x = numpy.array([i for i in range(11)])
+            x = numpy.array(step)
             A = numpy.vstack([x, numpy.ones(len(x))]).T
             [a, b], _, _, _ = numpy.linalg.lstsq(A, F2Values, rcond=None)
 
@@ -87,8 +88,8 @@ def GenerateLabelData(testMode):
             r, p = pearsonr(F2Values, a * x + b)
 
             # We round them up at 5 digits after the comma
-            entry.append(round(a, 6))
-            entry.append(round(p, 6))
+            entry.append(round(a, 5))
+            entry.append(round(p, 5))
 
             # The line to be added to the CSV file, only if the direction of the formant is clear enough (% risk)
             if p < RISK:
@@ -97,32 +98,32 @@ def GenerateLabelData(testMode):
                 # print(r ** 2, p)
                 # output = a * x + b
                 # print(a, b)
-                # fig = plt.figure()
+                # fig = pyplot.figure()
                 # ax = fig.add_subplot(111)
                 #
                 # dots, = ax.plot(x, F2Values, 'r.')
                 # regress, = ax.plot(x, output)
                 #
                 # ax.legend((regress, dots), ("Least Squares", "Raw F2 Values"))
-                # plt.title("Regression of the F2 values +-50ms around {}th frame".format(step[5]))
+                # pyplot.title("Regression of the F2 values +-50ms around {}th frame".format(step[5]))
                 # valuesString = "r^2 = {}, p-value = {}".format(round(r ** 2, 5), round(p, 5))
                 # ax.text(-0.1, -0.1, valuesString, transform=ax.transAxes)
                 # ax.text(0.5, -0.1, "File: {}".format(file.split("/")[-1]), transform=ax.transAxes)
-                # plt.show(fig)
+                # pyplot.show(fig)
+        print("\t\t{} done !".format(file))
 
     # Saving into a file
     if testMode:
-        filePath=join("testFiles","trainingData", "label_data.csv")
+        if not isdir(join("testFiles", "trainingData")):
+            mkdir(join("testFiles", "trainingData"))
+        filePath = join("testFiles", "trainingData", "label_data.csv")
     else:
-        filePath=join("trainingData", "label_data.csv")
+        filePath = join("trainingData", "label_data.csv")
 
     with open(filePath, "w") as outputFile:
         writer = csv.writer(outputFile)
         for line in csvLines:
             writer.writerow(line)
-    print(vowelCounter, "vowels found")
+    print("Generated Label Data CSV of", vowelCounter, "(vowels only) lines.")
     print('                Total time:', time.time() - TotalTime)
-
-
-if __name__ == '__main__':
-    GenerateLabelData()
+    print('')

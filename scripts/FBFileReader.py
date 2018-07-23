@@ -64,6 +64,13 @@ def GetF2Frequencies(fbFilename):
 
 
 def GetF2FrequenciesAround(array, timepoint, radius):
+    """
+    Gets the values of F2 frequencies around a frame in an F2 formant data Array
+    :param array: array of values built with function GetF2Frequencies
+    :param timepoint: center frame to consider
+    :param radius: radius used to get values at timepoint+-radius
+    :return: array of radius*2 + 1 frequencies
+    """
     start, end = timepoint / 160 - radius, timepoint / 160 + radius
     if start < 0 or end >= len(array):
         print("ERROR: WRONG RANGE IN GETF2FREQUENCIESAROUND IN ARRAY:\n", array, "\nAT TIME AND RADIUS", timepoint,

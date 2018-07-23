@@ -17,12 +17,31 @@ import numpy
 from matplotlib.colors import LogNorm
 from scipy.signal import hilbert, butter, lfilter
 
-from scripts.FBFileReader import GetF2Frequencies
+from .GammatoneFiltering import CENTER_FREQUENCIES
+from .FBFileReader import GetF2Frequencies
 
 SAMPLING_RATE = 16000
 CUTOFF = 100
 METHOD = 1
 LP_FILTERING = False
+
+
+def completeSplit(filename):
+    # Splitting filename
+    splitted = []
+    while True:
+        file = split(filename)
+        if file[0] in ('..', '.'):
+            splitted.append(file[1])
+            splitted.append(file[0])
+            break
+        elif file[0] == '':
+            splitted.append(file[1])
+            break
+        splitted.append(file[1])
+        filename = file[0]
+    splitted.reverse()
+    return splitted
 
 
 def paddedHilbert(signal):
@@ -63,7 +82,7 @@ def ExtractEnvelope(gfbFileName):
     Extracts 128 envelopes from the npy matrix stored in the parameter file
     :param gfbFileName: path to the file to be processed, with the extension .GFB.npy
     """
-    print("File:", gfbFileName)
+    print("File:\t\t{}".format(gfbFileName))
     # Load the matrix
     matrix = numpy.load(gfbFileName)
     # Matrix that will be saved
@@ -82,8 +101,8 @@ def ExtractEnvelope(gfbFileName):
             # Save the envelope to the right output channel
             envelope[i] = filtered_envelope_values
 
-    PlotEnvelopeSpectrogram(envelope, splitext(splitext(gfbFileName)[0])[0])
-    print(gfbFileName, "done !")
+    # PlotEnvelopeSpectrogramWithF2(envelope, splitext(splitext(gfbFileName)[0])[0])
+    print("\t\t{} done !".format(gfbFileName))
     return envelope
 
 
@@ -102,28 +121,53 @@ def ExtractAndSaveEnvelope(gfbFileName):
     SaveEnvelope(ExtractEnvelope(gfbFileName), gfbFileName)
 
 
-def PlotEnvelopeSpectrogram(matrix, filename):
-    # Plotting the image, with logarithmic normalization
-    plt.imshow(matrix, norm=LogNorm(), aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
+def ERBScale(f):
+    """
+    Computes the Equivalent Rectangular Bandwith at center frequency f, using Moore and Glasberg's linear approximation
+    :param f:   The center frequency to be considered, in Hz
+    :return:    The resulting bandwith
+    """
+    return 24.7 * (4.37 * f * 0.001 + 1)
+
+
+def GetNewHeightERB(matrix):
+    """
+    Compute the new height of the image if every line was multiplied by the the ratio to the bw of the lowest frequency
+    :param matrix: the matrix of outputs from the FilterBank
+    :return: the new height of the image, and each value of the ratios
+    """
+    height = 0
+    ratios = []
+    base = ERBScale(CENTER_FREQUENCIES[-1])     # Lowest frequency's bandwith
+    for i, line in enumerate(matrix):
+        erb = ERBScale(CENTER_FREQUENCIES[i])   # The ERB at this center frequency
+        ratio = int(round(erb / base))          # We round up or down the ratio, since pixels are discrete...
+        ratios.append(ratio)
+        height += ratio
+    return height, ratios
+
+
+def PlotEnvelopeSpectrogramWithF2(matrix, filename):
+    # Plotting the image, with logarithmic normalization and cell heights corresponding to ERB scale
+    h, ratios = GetNewHeightERB(matrix)
+    image = numpy.zeros([h, matrix.shape[1]])
+    i = 0
+    r = 0
+    for line in matrix:
+        j = 0
+        for j in range(ratios[r]):
+            image[i + j] = line
+        i += j + 1
+        r += 1
+    plt.imshow(image, norm=LogNorm(), aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
+
+    # plt.pcolormesh(matrix)
     # Get the VTR F2 Formants from the database
     F2Array, sampPeriod = GetF2Frequencies(filename + ".FB")
 
     t = [i * sampPeriod / 1000000. for i in range(len(F2Array))]
-
-    # Splitting filename
-    splitted = []
-    while True:
-        file = split(filename)
-        if file[0] in ('..', '.'):
-            splitted.append(file[1])
-            splitted.append(file[0])
-            break
-        elif file[0] == '':
-            break
-        splitted.append(file[1])
-        filename = file[0]
-    splitted.reverse()
-
+    splitted=completeSplit(filename)
+    print(splitted)
     plt.title("Envelopes of " + os.path.join(*splitted) + ".WAV and F2 formants from VTR database")
     # Plotting the VTR F2 formant over the envelope image
     line, = plt.plot(t, F2Array, "r.")
@@ -142,19 +186,19 @@ def ExtractAllEnvelopes(testMode):
     else:
         # Get all the GFB.npy files under resources/fcnn
         gfbFiles = glob.glob(join("resources", "f2cnn", "*", "*.GFB.npy"))
+    print("\n###############################\nExtracting Envelopes from files in '{}'.".format(split(gfbFiles[0])[0]))
 
     if not gfbFiles:
         print("NO GFB.npy FILES FOUND")
         exit(-1)
-    print(gfbFiles)
+
+    print(len(gfbFiles), "files found")
 
     # Usage of multiprocessing, to reduce computing time
-    proc = 1
+    proc = 4
     multiproc_pool = Pool(processes=proc)
     multiproc_pool.map(ExtractAndSaveEnvelope, gfbFiles)
 
+    print("Extracted Envelopes from all files.")
     print('              Total time:', time.time() - TotalTime)
-
-
-if __name__ == '__main__':
-    ExtractAllEnvelopes()
+    print('')

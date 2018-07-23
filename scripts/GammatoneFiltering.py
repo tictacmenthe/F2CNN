@@ -15,7 +15,7 @@ import time
 import wave
 from multiprocessing.pool import Pool
 from os import remove
-from os.path import splitext, join
+from os.path import splitext, join, split
 from shutil import copyfile
 import numpy
 
@@ -85,25 +85,15 @@ def loadGFBMatrix(filename):
 
 def GammatoneFiltering(wavFile):
     gfbFilename = splitext(wavFile)[0] + '.GFB'
+    print("Filtering:\t{}".format(wavFile))
 
     # Compute the filterbank output
-    startTime = time.time()
     nbframes, outputMatrix = getFilteredOutputFromFile(wavFile)
-    duration = time.time() - startTime
-    print(gfbFilename)
-    print('        Time for filtering:', duration)
-
-    # # If needed, plotting the first output of the file
-    # t = [i for i in range(nbframes)]
-    # plt.plot(t,outputMatrix[0])
-    # plt.show()
 
     # Save file to .GFB.npy format
-    startTime = time.time()
+    print("Saving:\t\t{}".format(gfbFilename))
     saveGFBMatrix(gfbFilename, outputMatrix)
-    duration = time.time() - startTime
-    print(gfbFilename)
-    print('           Time for saving:', duration)
+    print("\t\t{} done !".format(wavFile))
 
 
 def FilterAllOrganisedFiles(testMode):
@@ -116,6 +106,8 @@ def FilterAllOrganisedFiles(testMode):
         # Get all the WAV files under resources
         wavFiles = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))
 
+    print("\n###############################\nApplying FilterBank to files in '{}'.".format(split(wavFiles[0])[0]))
+
     if not wavFiles:
         print("NO WAV FILES FOUND")
         exit(-1)
@@ -127,8 +119,6 @@ def FilterAllOrganisedFiles(testMode):
     multiproc_pool = Pool(processes=proc)
     multiproc_pool.map(GammatoneFiltering, wavFiles)
 
+    print("Filtered and Saved all files.")
     print('                Total time:', time.time() - TotalTime)
-
-
-if __name__ == '__main__':
-    FilterAllOrganisedFiles()
+    print('')

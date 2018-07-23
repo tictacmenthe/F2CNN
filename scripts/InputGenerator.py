@@ -14,9 +14,9 @@ def GenerateInputData(testMode):
         # Test files
         envFiles = glob.glob(join("testFiles", "*.ENV1.npy"))
     else:
-        # Get all the ENV1.npy files under ../resources
+        # Get all the ENV1.npy files under resources
         envFiles = glob.glob(join("resources", "f2cnn", "*", "*.ENV1.npy"))
-    print("Generating Input Data from files in", split(envFiles[0])[0])
+    print("\n###############################\nGenerating Input Data from files in '{}'.".format(split(envFiles[0])[0]))
 
     envFiles = sorted(envFiles)
 
@@ -24,11 +24,11 @@ def GenerateInputData(testMode):
         print("NO ENV1.npy FILES FOUND")
         exit(-1)
 
-    print(envFiles)
+    print(len(envFiles), "files found")
 
     inputData = []
     for i, file in enumerate(envFiles):
-        print(i, file)
+        print(i, "Reading:\t{}".format(file))
         envelopes = numpy.load(file)
 
         # Number of timepoints for measures
@@ -48,13 +48,11 @@ def GenerateInputData(testMode):
                 valueArray = [channel[index] for channel in envelopes]  # All the values of env at the steps' timepoint
                 entryMatrix.append(valueArray)
             inputData.append(entryMatrix)
-        print(file, "done")
+        print("\t\t{} done !".format(file))
+
 
     inputData = numpy.array(inputData, dtype=numpy.float32)
-    print('Generated Matrix Shape:', inputData.shape)
+    print('Generated Input Matrix of shape {}.'.format(inputData.shape))
     numpy.save("trainingData/input_data", inputData)
     print('                Total time:', time.time() - TotalTime)
-
-
-if __name__ == '__main__':
-    GenerateInputData(True)
+    print('')

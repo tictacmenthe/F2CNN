@@ -15,10 +15,12 @@ root/
 -other directories/
 
 """
-
+import time
 from os import listdir, makedirs
 from os.path import isfile, splitext, dirname, exists, join, split
 from shutil import copyfile
+
+from .EnvelopeExtraction import completeSplit
 
 DIRSRC = "resources"
 DIRVTR = join(DIRSRC, "vtr_formants")
@@ -51,7 +53,7 @@ def getVTRFileNames():
 def splitVTRFileNames(files):
     splittedFileNames = []
     for name in files:
-        splittedFileNames.append(split(name.upper())[3:])
+        splittedFileNames.append(completeSplit(name.upper())[2:])
     return splittedFileNames
 
 
@@ -59,36 +61,41 @@ def moveFilesToPosition(files):
     # Get the WAV files from timit
     upperFiles = []
     for f in files:
-        print(split(splitext(f)[0]))
-        inTimit = join(split(splitext(f)[0])[3:]).upper()
-        print("INTIMIT", inTimit)
+        # Remove extension
+        f = splitext(f)[0]
+        # Split
+        splitted=completeSplit(f)
+        inTimit = join(*(splitted[-4:])).upper()
+        print(inTimit)
         upperFiles.append(inTimit)
     upperFiles = set(upperFiles)
     for i, f in enumerate(upperFiles):
         path = join(DIRTIM, f + '.WAV')
-        f = split(f)
+        f = completeSplit(f)
         # The output filename is REGION.PERSON.SENTENCE.EXTENSION
         f = join(f[0], f[1] + '.' + f[2] + '.' + f[3])
         newPath = join(DIROUTPUT, f + '.WAV')
         if isfile(path):
             if not exists(dirname(newPath)):
                 makedirs(dirname(newPath))
-            print(i, 'Copying', path, 'to\n', newPath)
+            print('Copying\t\t{}\nto\t\t{}'.format(path, newPath))
             copyfile(path, newPath)
         else:
             print("DOESNT EXIST", path)
     # Get the other files
     splittedFileNames = splitVTRFileNames(files)
+    print(splittedFileNames)
     for src, dst in zip(files, splittedFileNames):
         dst = join(DIROUTPUT, dst[0], dst[1] + '.' + dst[2] + '.' + dst[3])
-        print('Copying', src, 'to\n', dst)
+        print('Copying\t\t{}\nto\t\t{}'.format(src,dst))
         copyfile(src, dst)
 
 
-def OrganiseAllFiles():
+def OrganiseAllFiles(_):
+    print("\n###############################\nReorganising files, like in the OrganiseFiles.py file's documentation.")
+    TotalTime = time.time()
     fileNames = getVTRFileNames()
     moveFilesToPosition(fileNames)
-
-
-if __name__ == '__main__':
-    OrganiseAllFiles()
+    print("Done reorganising files.")
+    print('                Total time:', time.time() - TotalTime)
+    print('')
