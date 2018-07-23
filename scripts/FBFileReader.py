@@ -9,14 +9,9 @@ The output is a numpy.ndarray of size 8*nb_frames, with bn_frames being one of t
 
 """
 
-import glob
 import struct
-import time
-from os.path import join
 
 import numpy
-
-from .GammatoneFiltering import CENTER_FREQUENCIES
 
 
 def printBytes(byteStr):
@@ -67,40 +62,14 @@ def GetF2Frequencies(fbFilename):
     matrix, sampPeriod = ExtractFBFile(fbFilename)
     return matrix[:, 1], sampPeriod
 
+
 def GetF2FrequenciesAround(array, timepoint, radius):
-    start,end=timepoint/160 - radius, timepoint/160 + radius
-    if start<0 or end >= len(array):
-        print("ERROR: WRONG RANGE IN GETF2FREQUENCIESAROUND IN ARRAY:\n",array,"\nAT TIME AND RADIUS",timepoint,radius)
-        print("INF" if start<0 else "SUP")
+    start, end = timepoint / 160 - radius, timepoint / 160 + radius
+    if start < 0 or end >= len(array):
+        print("ERROR: WRONG RANGE IN GETF2FREQUENCIESAROUND IN ARRAY:\n", array, "\nAT TIME AND RADIUS", timepoint,
+              radius)
+        print("INF" if start < 0 else "SUP")
         print(len(array))
         exit(-1)
-    start,end=int(start),int(end)+1
+    start, end = int(start), int(end) + 1
     return array[start:end]
-
-
-def main():
-    # # In case you need to print numpy outputs:
-    numpy.set_printoptions(threshold=numpy.inf, suppress=True)
-    print("Extraction of FB Files...")
-    TotalTime = time.time()
-
-    # # Get all the WAV files under ../resources
-    # fbFiles = glob.glob(join("..","resources","f2cnn","*","*.FB"))
-
-    # Test WavFiles
-    fbFiles = glob.glob(join("..", "testFiles", "*.FB"))
-    # glob.glob(join("..", "testFiles", "biggest", "*.FB"))[0]]
-
-    if not fbFiles:
-        print("NO FB FILES FOUND")
-        exit(-1)
-    print(fbFiles)
-    array, sampperiod = GetF2Frequencies(fbFiles[0])
-    print(sampperiod)
-    print(GetF2FrequenciesAround(array, 800, 5))
-
-    print('              Total time:', time.time() - TotalTime)
-
-
-if __name__ == '__main__':
-    main()

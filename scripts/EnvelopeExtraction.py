@@ -10,7 +10,7 @@ import glob
 import os
 import time
 from multiprocessing.pool import Pool
-from os.path import splitext, join
+from os.path import splitext, join, split
 
 import matplotlib.pyplot as plt
 import numpy
@@ -54,7 +54,7 @@ def lowPassFilter(signal, freq):
     """
     # The A et B parameter arrays of the filter
     B, A = butter(1, freq / (SAMPLING_RATE / 2), 'low')
-    print(B,A)
+    print(B, A)
     return lfilter(B, A, signal, axis=0)
 
 
@@ -67,7 +67,7 @@ def ExtractEnvelope(gfbFileName):
     # Load the matrix
     matrix = numpy.load(gfbFileName)
     # Matrix that will be saved
-    envelope=numpy.zeros(matrix.shape)
+    envelope = numpy.zeros(matrix.shape)
     # Computing the envelope and filtering it
     for i, signal in enumerate(matrix):
         # print(npyfile,i)
@@ -82,7 +82,7 @@ def ExtractEnvelope(gfbFileName):
             # Save the envelope to the right output channel
             envelope[i] = filtered_envelope_values
 
-    # PlotEnvelopeSpectrogram(envelope, splitext(splitext(gfbFileName)[0])[0])
+    PlotEnvelopeSpectrogram(envelope, splitext(splitext(gfbFileName)[0])[0])
     print(gfbFileName, "done !")
     return envelope
 
@@ -107,26 +107,41 @@ def PlotEnvelopeSpectrogram(matrix, filename):
     plt.imshow(matrix, norm=LogNorm(), aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
     # Get the VTR F2 Formants from the database
     F2Array, sampPeriod = GetF2Frequencies(filename + ".FB")
+
     t = [i * sampPeriod / 1000000. for i in range(len(F2Array))]
-    # TODO: Splitting by / is not platform independent
-    file = filename.split('/')
-    plt.title("Envelopes of " + os.path.join(file[-2], file[-1]) + ".WAV and F2 formants from VTR database")
+
+    # Splitting filename
+    splitted = []
+    while True:
+        file = split(filename)
+        if file[0] in ('..', '.'):
+            splitted.append(file[1])
+            splitted.append(file[0])
+            break
+        elif file[0] == '':
+            break
+        splitted.append(file[1])
+        filename = file[0]
+    splitted.reverse()
+
+    plt.title("Envelopes of " + os.path.join(*splitted) + ".WAV and F2 formants from VTR database")
     # Plotting the VTR F2 formant over the envelope image
     line, = plt.plot(t, F2Array, "r.")
     plt.legend(("F2 Formant", line))
     plt.show()
 
 
-def main():
+def ExtractAllEnvelopes(testMode):
     # # In case you need to print numpy outputs:
     # numpy.set_printoptions(threshold=numpy.inf, suppress=True)
     TotalTime = time.time()
 
-    # Get all the GFB.npy files under ../resources/fcnn
-    gfbFiles = glob.glob(join("..", "resources", "f2cnn", "*", "*.GFB.npy"))
-
-    # # Test Files
-    # gfbFiles = glob.glob(join("..", "testFiles", "*.GFB.npy"))
+    if testMode:
+        # # Test Files
+        gfbFiles = glob.glob(join("testFiles", "*.GFB.npy"))
+    else:
+        # Get all the GFB.npy files under resources/fcnn
+        gfbFiles = glob.glob(join("resources", "f2cnn", "*", "*.GFB.npy"))
 
     if not gfbFiles:
         print("NO GFB.npy FILES FOUND")
@@ -134,7 +149,7 @@ def main():
     print(gfbFiles)
 
     # Usage of multiprocessing, to reduce computing time
-    proc = 4
+    proc = 1
     multiproc_pool = Pool(processes=proc)
     multiproc_pool.map(ExtractAndSaveEnvelope, gfbFiles)
 
@@ -142,4 +157,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    ExtractAllEnvelopes()

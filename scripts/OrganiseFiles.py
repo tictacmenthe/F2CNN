@@ -42,7 +42,7 @@ def getVTRFileNames():
                 p_path = join(reg_path, p)
                 files = listdir(p_path)
                 for f in files:
-                    filepath = join(p_path,f)
+                    filepath = join(p_path, f)
                     if isfile(filepath):
                         output.append(filepath)
     return output
@@ -61,34 +61,34 @@ def moveFilesToPosition(files):
     for f in files:
         print(split(splitext(f)[0]))
         inTimit = join(split(splitext(f)[0])[3:]).upper()
-        print("INTIMIT",inTimit)
+        print("INTIMIT", inTimit)
         upperFiles.append(inTimit)
     upperFiles = set(upperFiles)
-    for i,f in enumerate(upperFiles):
-        path = join(DIRTIM,f + '.WAV')
+    for i, f in enumerate(upperFiles):
+        path = join(DIRTIM, f + '.WAV')
         f = split(f)
         # The output filename is REGION.PERSON.SENTENCE.EXTENSION
-        f = join(f[0],f[1] + '.' + f[2] + '.' + f[3])
-        newPath = join(DIROUTPUT,f + '.WAV')
+        f = join(f[0], f[1] + '.' + f[2] + '.' + f[3])
+        newPath = join(DIROUTPUT, f + '.WAV')
         if isfile(path):
             if not exists(dirname(newPath)):
                 makedirs(dirname(newPath))
-            print(i,'Copying',path,'to\n',newPath)
+            print(i, 'Copying', path, 'to\n', newPath)
             copyfile(path, newPath)
         else:
-            print("DOESNT EXIST",path)
+            print("DOESNT EXIST", path)
     # Get the other files
     splittedFileNames = splitVTRFileNames(files)
     for src, dst in zip(files, splittedFileNames):
-        dst = join(DIROUTPUT,dst[0],dst[1] + '.' + dst[2] + '.' + dst[3])
+        dst = join(DIROUTPUT, dst[0], dst[1] + '.' + dst[2] + '.' + dst[3])
         print('Copying', src, 'to\n', dst)
         copyfile(src, dst)
 
 
-def main():
+def OrganiseAllFiles():
     fileNames = getVTRFileNames()
     moveFilesToPosition(fileNames)
 
 
 if __name__ == '__main__':
-    main()
+    OrganiseAllFiles()
