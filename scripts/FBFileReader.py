@@ -75,7 +75,10 @@ def GetF2FrequenciesAround(array, timepoint, radius):
     if start < 0 or end >= len(array):
         print("ERROR: WRONG RANGE IN GETF2FREQUENCIESAROUND IN ARRAY:\n", array, "\nAT TIME AND RADIUS", timepoint,
               radius)
-        print("INF" if start < 0 else "SUP")
+        if start<0:
+            print("INF")
+        elif end>=len(array):
+            print("SUP")
         print(len(array))
         exit(-1)
     start, end = int(start), int(end) + 1

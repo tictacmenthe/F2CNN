@@ -9,6 +9,7 @@ The files should be first processed with OrganiseFiles.py
 """
 
 import glob
+import os
 import struct
 import subprocess
 import time
@@ -21,11 +22,13 @@ import numpy
 
 from gammatone import filters
 
+
 # ##### PREPARATION OF FILTERBANK
 # CENTER FREQUENCIES ON ERB SCALE
 CENTER_FREQUENCIES = filters.centre_freqs(16000, 128, 100)
 # Filter coefficient for a Gammatone filterbank
 FILTERBANK_COEFFICIENTS = filters.make_erb_filters(16000, CENTER_FREQUENCIES)
+# TODO: Generate these with input parameters
 
 
 def getFilteredOutputFromFile(filename):
@@ -71,7 +74,8 @@ def convertWavFile(filename):
     newname = splitext(filename)[0] + '.mp3'
     copyfile(filename, newname)
     remove(filename)
-    subprocess.call(['ffmpeg', '-i', newname, filename])
+    FNULL = open(os.devnull, 'w')
+    subprocess.call(['ffmpeg', '-i', newname, filename], stdout=FNULL, stderr=subprocess.STDOUT, close_fds=True)
     remove(newname)
 
 
@@ -93,7 +97,7 @@ def GammatoneFiltering(wavFile):
     # Save file to .GFB.npy format
     print("Saving:\t\t{}".format(gfbFilename))
     saveGFBMatrix(gfbFilename, outputMatrix)
-    print("\t\t{} done !".format(wavFile))
+    print("\t\t{}\tdone !".format(wavFile))
 
 
 def FilterAllOrganisedFiles(testMode):
@@ -101,7 +105,7 @@ def FilterAllOrganisedFiles(testMode):
 
     if testMode:
         # Test WavFiles
-        wavFiles = glob.glob(join("testFiles","*.WAV"))
+        wavFiles = glob.glob(join("testFiles", "*.WAV"))
     else:
         # Get all the WAV files under resources
         wavFiles = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))

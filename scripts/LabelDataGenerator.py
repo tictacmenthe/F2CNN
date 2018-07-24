@@ -6,15 +6,14 @@ Requires a prior execution of the OrganiseFiles.py, GammatoneFiltering.py, Envel
 
 """
 
+import numpy
 import csv
 import glob
 import time
 import wave
 from os import mkdir
-from os.path import join, split, splitext, isdir
-
-import numpy
 from scipy.stats import pearsonr
+from os.path import join, split, splitext, isdir
 
 from .FBFileReader import GetF2Frequencies, GetF2FrequenciesAround
 from .PHNFileReader import GetPhonemeAt, VOWELS
@@ -34,7 +33,7 @@ def GenerateLabelData(testMode):
         # Get all the files under resources
         filenames = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))
 
-    print("\n###############################\nGenerating Label Data from files in '{}'.".format(split(filenames[0])[0]))
+    print("\n###############################\nGenerating Label Data from files in '{}'.".format(split(split(filenames[0])[0])[0]))
 
     # Alphanumeric order
     filenames = sorted(filenames)
@@ -75,7 +74,6 @@ def GenerateLabelData(testMode):
             phoneme = GetPhonemeAt(splitext(file)[0] + '.PHN', step[5])
             if phoneme not in VOWELS:
                 continue
-            vowelCounter += 1
             entry = [region, speaker, sentence, phoneme, step[5]]
             F2Values = numpy.array(GetF2FrequenciesAround(F2Array, step[5], 5))
 
@@ -90,9 +88,9 @@ def GenerateLabelData(testMode):
             # We round them up at 5 digits after the comma
             entry.append(round(a, 5))
             entry.append(round(p, 5))
-
             # The line to be added to the CSV file, only if the direction of the formant is clear enough (% risk)
             if p < RISK:
+                vowelCounter += 1
                 entry.append(1 if a > 0 else -1)
                 csvLines.append(entry)
                 # print(r ** 2, p)
@@ -103,14 +101,13 @@ def GenerateLabelData(testMode):
                 #
                 # dots, = ax.plot(x, F2Values, 'r.')
                 # regress, = ax.plot(x, output)
-                #
                 # ax.legend((regress, dots), ("Least Squares", "Raw F2 Values"))
                 # pyplot.title("Regression of the F2 values +-50ms around {}th frame".format(step[5]))
-                # valuesString = "r^2 = {}, p-value = {}".format(round(r ** 2, 5), round(p, 5))
+                # valuesString = "r^2={}, p={}, a={}".format(round(r ** 2, 5), round(p, 5), a)
                 # ax.text(-0.1, -0.1, valuesString, transform=ax.transAxes)
-                # ax.text(0.5, -0.1, "File: {}".format(file.split("/")[-1]), transform=ax.transAxes)
+                # ax.text(0.8, -0.1, "File: {}".format(file.split("/")[-1]), transform=ax.transAxes)
                 # pyplot.show(fig)
-        print("\t\t{} done !".format(file))
+        print("\t\t{}\tdone !".format(file))
 
     # Saving into a file
     if testMode:

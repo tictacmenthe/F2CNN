@@ -20,18 +20,33 @@ from os import listdir, makedirs
 from os.path import isfile, splitext, dirname, exists, join, split
 from shutil import copyfile
 
-from .EnvelopeExtraction import completeSplit
-
 DIRSRC = "resources"
 DIRVTR = join(DIRSRC, "vtr_formants")
 DIRTIM = join(DIRSRC, "TIMIT")
 DIROUTPUT = join(DIRSRC, "f2cnn")
-
-# 0=TIMIT, 1=VTR
+# Regions
 REGNUMTEST = [1, 2, 3, 4, 5, 6, 7, 8]
 REGNUMTRAIN = [1, 3, 4, 5, 6, 7]
 REGNUM = [REGNUMTRAIN, REGNUMTEST]
 CASE = ['TRAIN', 'TEST']
+
+
+def completeSplit(filename):
+    # Splitting filename
+    splitted = []
+    while True:
+        file = split(filename)
+        if file[0] in ('..', '.'):
+            splitted.append(file[1])
+            splitted.append(file[0])
+            break
+        elif file[0] == '':
+            splitted.append(file[1])
+            break
+        splitted.append(file[1])
+        filename = file[0]
+    splitted.reverse()
+    return splitted
 
 
 def getVTRFileNames():
@@ -64,7 +79,7 @@ def moveFilesToPosition(files):
         # Remove extension
         f = splitext(f)[0]
         # Split
-        splitted=completeSplit(f)
+        splitted = completeSplit(f)
         inTimit = join(*(splitted[-4:])).upper()
         print(inTimit)
         upperFiles.append(inTimit)
@@ -87,7 +102,7 @@ def moveFilesToPosition(files):
     print(splittedFileNames)
     for src, dst in zip(files, splittedFileNames):
         dst = join(DIROUTPUT, dst[0], dst[1] + '.' + dst[2] + '.' + dst[3])
-        print('Copying\t\t{}\nto\t\t{}'.format(src,dst))
+        print('Copying\t\t{}\nto\t\t{}'.format(src, dst))
         copyfile(src, dst)
 
 
@@ -96,6 +111,6 @@ def OrganiseAllFiles(_):
     TotalTime = time.time()
     fileNames = getVTRFileNames()
     moveFilesToPosition(fileNames)
-    print("Done reorganising files.")
+    print("Done reorganizing files.")
     print('                Total time:', time.time() - TotalTime)
     print('')

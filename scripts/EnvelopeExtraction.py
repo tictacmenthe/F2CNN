@@ -7,41 +7,17 @@ using Hillbert transform and low pass filtering.
 from __future__ import division
 
 import glob
-import os
 import time
 from multiprocessing.pool import Pool
 from os.path import splitext, join, split
 
-import matplotlib.pyplot as plt
 import numpy
-from matplotlib.colors import LogNorm
 from scipy.signal import hilbert, butter, lfilter
-
-from .GammatoneFiltering import CENTER_FREQUENCIES
-from .FBFileReader import GetF2Frequencies
 
 SAMPLING_RATE = 16000
 CUTOFF = 100
 METHOD = 1
 LP_FILTERING = False
-
-
-def completeSplit(filename):
-    # Splitting filename
-    splitted = []
-    while True:
-        file = split(filename)
-        if file[0] in ('..', '.'):
-            splitted.append(file[1])
-            splitted.append(file[0])
-            break
-        elif file[0] == '':
-            splitted.append(file[1])
-            break
-        splitted.append(file[1])
-        filename = file[0]
-    splitted.reverse()
-    return splitted
 
 
 def paddedHilbert(signal):
@@ -100,9 +76,7 @@ def ExtractEnvelope(gfbFileName):
             filtered_envelope_values = lowPassFilter(amplitude_envelope, CUTOFF)
             # Save the envelope to the right output channel
             envelope[i] = filtered_envelope_values
-
-    # PlotEnvelopeSpectrogramWithF2(envelope, splitext(splitext(gfbFileName)[0])[0])
-    print("\t\t{} done !".format(gfbFileName))
+    print("\t\t{}\tdone !".format(gfbFileName))
     return envelope
 
 
@@ -119,60 +93,6 @@ def SaveEnvelope(matrix, gfbFileName):
 
 def ExtractAndSaveEnvelope(gfbFileName):
     SaveEnvelope(ExtractEnvelope(gfbFileName), gfbFileName)
-
-
-def ERBScale(f):
-    """
-    Computes the Equivalent Rectangular Bandwith at center frequency f, using Moore and Glasberg's linear approximation
-    :param f:   The center frequency to be considered, in Hz
-    :return:    The resulting bandwith
-    """
-    return 24.7 * (4.37 * f * 0.001 + 1)
-
-
-def GetNewHeightERB(matrix):
-    """
-    Compute the new height of the image if every line was multiplied by the the ratio to the bw of the lowest frequency
-    :param matrix: the matrix of outputs from the FilterBank
-    :return: the new height of the image, and each value of the ratios
-    """
-    height = 0
-    ratios = []
-    base = ERBScale(CENTER_FREQUENCIES[-1])     # Lowest frequency's bandwith
-    for i, line in enumerate(matrix):
-        erb = ERBScale(CENTER_FREQUENCIES[i])   # The ERB at this center frequency
-        ratio = int(round(erb / base))          # We round up or down the ratio, since pixels are discrete...
-        ratios.append(ratio)
-        height += ratio
-    return height, ratios
-
-
-def PlotEnvelopeSpectrogramWithF2(matrix, filename):
-    # Plotting the image, with logarithmic normalization and cell heights corresponding to ERB scale
-    h, ratios = GetNewHeightERB(matrix)
-    image = numpy.zeros([h, matrix.shape[1]])
-    i = 0
-    r = 0
-    for line in matrix:
-        j = 0
-        for j in range(ratios[r]):
-            image[i + j] = line
-        i += j + 1
-        r += 1
-    plt.imshow(image, norm=LogNorm(), aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
-
-    # plt.pcolormesh(matrix)
-    # Get the VTR F2 Formants from the database
-    F2Array, sampPeriod = GetF2Frequencies(filename + ".FB")
-
-    t = [i * sampPeriod / 1000000. for i in range(len(F2Array))]
-    splitted=completeSplit(filename)
-    print(splitted)
-    plt.title("Envelopes of " + os.path.join(*splitted) + ".WAV and F2 formants from VTR database")
-    # Plotting the VTR F2 formant over the envelope image
-    line, = plt.plot(t, F2Array, "r.")
-    plt.legend(("F2 Formant", line))
-    plt.show()
 
 
 def ExtractAllEnvelopes(testMode):
