@@ -18,6 +18,18 @@ from os.path import join, split, splitext, isdir
 from .FBFileReader import GetF2Frequencies, GetF2FrequenciesAround
 from .PHNFileReader import GetPhonemeAt, VOWELS
 
+def GetLabels(testMode):
+    output=[]
+    if testMode:
+        filepath='../../testFiles/trainingData/label_data.csv'
+    else:
+        filepath='../../trainingData/label_data.csv'
+    with open(filepath,'r') as labelDataFile:
+        csvReader=csv.reader(labelDataFile)
+        for line in csvReader:
+            output.append(int(line[-1]))
+    return output
+
 
 def GenerateLabelData(testMode):
     print(split(__file__)[1])
