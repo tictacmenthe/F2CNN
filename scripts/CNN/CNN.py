@@ -37,7 +37,7 @@ def SeparateTestTrain(pathToInput, pathToLabel):
 
 batch_size = 128
 num_classes = 2
-epochs = 12
+epochs = 20
 
 # input image dimensions
 img_rows, img_cols = 11, 128
@@ -52,8 +52,11 @@ input_shape = (img_rows, img_cols, 1)
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
 
-x_train /= 255
-x_test /= 255
+# TODO: normalize
+# x_train /= 255
+# x_test /= 255
+
+print(x_test[0])
 print('x_train shape:', x_train.shape)
 print('y_train shape:', y_train.shape)
 print('x_test shape:', x_test.shape)

@@ -1,11 +1,13 @@
-from os.path import join
+import os
 
 import matplotlib.pyplot as plt
 import numpy
 from matplotlib.colors import LogNorm
 
-from .OrganiseFiles import completeSplit
-from .FBFileReader import GetF2Frequencies
+from gammatone.filters import centre_freqs
+from .EnvelopeExtraction import ExtractEnvelopeFromMatrix
+from .FBFileReader import ExtractFBFile
+from .GammatoneFiltering import GetFilteredOutputFromFile
 
 
 def ERBScale(f):
@@ -35,7 +37,7 @@ def GetNewHeightERB(matrix, CENTER_FREQUENCIES):
     return height, ratios
 
 
-def PlotEnvelopeSpectrogramWithF2(matrix, CENTER_FREQUENCIES, Formants, sampPeriod=10000, title=""):
+def PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES, Formants, sampPeriod=10000, title=""):
     """
     Plots a spectrogram-like representation of a matrix, with ERB scale as bandwidths, and filename gives the
     :param title: title for the plot
@@ -45,7 +47,7 @@ def PlotEnvelopeSpectrogramWithF2(matrix, CENTER_FREQUENCIES, Formants, sampPeri
     :param CENTER_FREQUENCIES: the center frequency of each channel of the matrix
     """
     # Plotting the image, with logarithmic normalization and cell heights corresponding to ERB scale
-    h, ratios = GetNewHeightERB(matrix)
+    h, ratios = GetNewHeightERB(matrix, CENTER_FREQUENCIES)
     image = numpy.zeros([h, matrix.shape[1]])
     i = 0
     r = 0
@@ -57,19 +59,25 @@ def PlotEnvelopeSpectrogramWithF2(matrix, CENTER_FREQUENCIES, Formants, sampPeri
         r += 1
     plt.imshow(image, norm=LogNorm(), aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
 
-    # plt.pcolormesh(matrix)
-    # Get the VTR F2 Formants from the database
-    # F2Array, sampPeriod = GetF2Frequencies(filename + ".FB")
+    # Plotting the VTR formants over the envelope image
+    formants=[[],[],[],[]]
+    for i in range(4):
+        for j in range(len(Formants)):
+            formants[i].append(Formants[j][i])
+    t = [i * sampPeriod / 1000000. for i in range(len(formants[0]))]
 
-    t = [i * sampPeriod / 1000000. for i in range(len(Formants[0]))]
-    # splitted=completeSplit(filename)
-    # print(splitted)
-    # plt.title("Envelopes of " + join(*splitted) + ".WAV and F2 formants from VTR database")
-    # Plotting the VTR F2 formant over the envelope image
     plt.title(title)
-    lines=[]
-    for i, formant in enumerate(Formants):
-        line, = plt.plot(t, formant)
-        lines.append(line)
-    plt.legend(lines, ("F{} Frequencies (Hz)".format(i+1) for i in range(len(lines))))
+    for i, formant in enumerate(formants):
+        plt.plot(t, formant, label='F{} Frequencies (Hz)'.format(i))
+    plt.legend()
     plt.show()
+
+
+def PlotEnvelopesAndF2FromFile(filename):
+    matrix = GetFilteredOutputFromFile(filename)
+    matrix=ExtractEnvelopeFromMatrix(matrix)
+    CENTER_FREQUENCIES = centre_freqs(16000, 128, 100)
+    formants, sampPeriod = ExtractFBFile(os.path.splitext(filename)[0]+'.FB')
+    formants=formants[:,:4]
+    title="'Spectrogram' like representation of envelopes, and formants"
+    PlotEnvelopeSpectrogram(matrix,CENTER_FREQUENCIES,formants, sampPeriod, title)

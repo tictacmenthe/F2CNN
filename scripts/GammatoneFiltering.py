@@ -31,7 +31,7 @@ FILTERBANK_COEFFICIENTS = filters.make_erb_filters(16000, CENTER_FREQUENCIES)
 # TODO: Generate these with input parameters
 
 
-def getFilteredOutputFromFile(filename):
+def GetFilteredOutputFromFile(filename):
     """
     Computes the output of a gammatone filterbank applied to the WAV file 'filename'
     :param filename: path to a WAV file
@@ -42,7 +42,7 @@ def getFilteredOutputFromFile(filename):
         wavFile = wave.open(filename, 'r')
     except wave.Error:
         print("Converting file to correct format...")
-        convertWavFile(filename)
+        ConvertWavFile(filename)
         wavFile = wave.open(filename, 'r')
     wavList = numpy.zeros(wavFile.getnframes())
     for i in range(wavFile.getnframes()):
@@ -55,18 +55,18 @@ def getFilteredOutputFromFile(filename):
     # plt.plot(t, wavList)
     # plt.show()
 
-    return getFilteredOutputFromArray(wavFile.getnframes(), wavList)
+    return GetFilteredOutputFromArray(wavList)
 
 
-def getFilteredOutputFromArray(nframes, array):
+def GetFilteredOutputFromArray(array):
     # gammatone library needs a numpy array
     # Application of the filterbank to a vector
     filteredMatrix = filters.erb_filterbank(array,
                                             FILTERBANK_COEFFICIENTS)  # Matrix of wavFile.getnframes() X 128 real values
-    return nframes, filteredMatrix
+    return filteredMatrix
 
 
-def convertWavFile(filename):
+def ConvertWavFile(filename):
     """
     Some WAV files seem to miss some features needed by the wave library (RIFF ID), this counters that
     :param filename: path to the WAV file
@@ -92,7 +92,7 @@ def GammatoneFiltering(wavFile):
     print("Filtering:\t{}".format(wavFile))
 
     # Compute the filterbank output
-    nbframes, outputMatrix = getFilteredOutputFromFile(wavFile)
+    outputMatrix = GetFilteredOutputFromFile(wavFile)
 
     # Save file to .GFB.npy format
     print("Saving:\t\t{}".format(gfbFilename))

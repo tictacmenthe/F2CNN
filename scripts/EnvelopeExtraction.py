@@ -14,6 +14,7 @@ from os.path import splitext, join, split
 import numpy
 from scipy.signal import hilbert, butter, lfilter
 
+
 SAMPLING_RATE = 16000
 CUTOFF = 100
 METHOD = 1
@@ -52,7 +53,23 @@ def lowPassFilter(signal, freq):
     print(B, A)
     return lfilter(B, A, signal, axis=0)
 
-
+def ExtractEnvelopeFromMatrix(matrix):
+    # Matrix that will be saved
+    envelopes = numpy.zeros(matrix.shape)
+    # Computing the envelope and filtering it
+    for i, signal in enumerate(matrix):
+        # print(npyfile,i)
+        # Envelope extraction
+        analytic_signal = paddedHilbert(signal)
+        amplitude_envelope = numpy.abs(analytic_signal)
+        if not LP_FILTERING:
+            envelopes[i] = amplitude_envelope
+        else:
+            # Low Pass Filter with Butterworth 'CUTOFF' Hz filter
+            filtered_envelope_values = lowPassFilter(amplitude_envelope, CUTOFF)
+            # Save the envelope to the right output channel
+            envelopes[i] = filtered_envelope_values
+    return envelopes
 def ExtractEnvelope(gfbFileName):
     """
     Extracts 128 envelopes from the npy matrix stored in the parameter file
@@ -61,23 +78,9 @@ def ExtractEnvelope(gfbFileName):
     print("File:\t\t{}".format(gfbFileName))
     # Load the matrix
     matrix = numpy.load(gfbFileName)
-    # Matrix that will be saved
-    envelope = numpy.zeros(matrix.shape)
-    # Computing the envelope and filtering it
-    for i, signal in enumerate(matrix):
-        # print(npyfile,i)
-        # Envelope extraction
-        analytic_signal = paddedHilbert(signal)
-        amplitude_envelope = numpy.abs(analytic_signal)
-        if not LP_FILTERING:
-            envelope[i] = amplitude_envelope
-        else:
-            # Low Pass Filter with Butterworth 'CUTOFF' Hz filter
-            filtered_envelope_values = lowPassFilter(amplitude_envelope, CUTOFF)
-            # Save the envelope to the right output channel
-            envelope[i] = filtered_envelope_values
+    envelopes=ExtractEnvelopeFromMatrix(matrix)
     print("\t\t{}\tdone !".format(gfbFileName))
-    return envelope
+    return envelopes
 
 
 def SaveEnvelope(matrix, gfbFileName):

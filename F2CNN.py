@@ -1,11 +1,12 @@
 import argparse
+from os.path import isfile
 
 from scripts.OrganiseFiles import OrganiseAllFiles
 from scripts.GammatoneFiltering import FilterAllOrganisedFiles
 from scripts.EnvelopeExtraction import ExtractAllEnvelopes
 from scripts.LabelDataGenerator import GenerateLabelData
 from scripts.InputGenerator import GenerateInputData
-
+from scripts.Plotting import PlotEnvelopesAndF2FromFile
 
 def All(testMode):
     """
@@ -37,20 +38,29 @@ label:\t\tGenerates Labeling data for the CNN\n\t\
 input\t\tGenerates Input data for the CNN, requires label first\n\t\
 all:\t\tDoes all of the above
     """
-    parser = argparse.ArgumentParser(description="F2CNN Project's entry script")
+    parser = argparse.ArgumentParser(description="F2CNN Project's entry script.",
+                                     epilog="For additional information, add -h after any positional argument")
+    parser.add_argument('--silent', '-s', action='store_false', help="Remove logs, for mostly silent processing.")
     subparsers = parser.add_subparsers()
-    parser_prepare = subparsers.add_parser('prepare', help='Runs the command given in argument',
-                                           formatter_class=argparse.RawTextHelpFormatter)
-    parser_prepare.add_argument('command', choices=FUNCTIONS.keys(), help=helpText)
-    parser_prepare.add_argument('--test', '-t', action='store_true', help="Test mode, uses the files located in the\
-                                                                    testFiles directory")
-    parser.add_argument('--silent', '-s', action='store_false', help="Remove logs, for mostly silent processing")
 
+    parser_prepare = subparsers.add_parser('prepare', help='Runs the command given in argument.',
+                                           formatter_class=argparse.RawTextHelpFormatter)
+    parser_prepare.add_argument('prepare_command', choices=FUNCTIONS.keys(), help=helpText)
+    parser_prepare.add_argument('--test', '-t', action='store_true', help="Test mode, uses the files located in the "
+                                                                          "testFiles directory.")
+    parser_plot = subparsers.add_parser('plot', help='For plotting spectrogram-like figure from .WAV file.')
+    parser_plot.add_argument('--gammatonegram', '-g', dest='gfilename', nargs=None, type=str,
+                             help="Plots a spectrogram like figure from the output of a GammaTone FilterBank applied\
+                                  to the given file, and also plots the VTR formants from the .FB file in the same dir")
     args = parser.parse_args()
 
     # Starts the command requested
     # TODO: silent
-    FUNCTIONS[args.command](args.test)
+    if 'prepare_command' in args:
+        FUNCTIONS[args.prepare_command](args.test)
+    if 'gfilename' in args:
+        print("Plotting for file {}...".format(args.gfilename))
+        PlotEnvelopesAndF2FromFile(args.gfilename)
 
 
 if __name__ == '__main__':
