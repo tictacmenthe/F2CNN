@@ -21,36 +21,39 @@ def printBytes(byteStr):
 
 def ExtractFBFile(fbFilename, verbose=False):
     # The file to read from, in binary reading mode
-    with open(fbFilename, 'rb') as fbFile:
-        # Reading the headers, with nb of frames and periods
-        dat = fbFile.read(4)
-        nFrame = struct.unpack('>i', dat)[0]
-        dat = fbFile.read(4)
-        sampPeriod = struct.unpack('>i', dat)[0]
-        dat = fbFile.read(2)
-        sampSize = struct.unpack('>h', dat)[0]
-        nComps = sampSize / 4
-        dat = fbFile.read(2)
-        fileType = struct.unpack('>h', dat)[0]
-        if verbose:
-            print('N_SAMPLES=', nFrame)
-            print('SAMP_PERIOD=', sampPeriod)
-            print('SAMP_SIZE=', sampSize)
-            print('NUM_COMPS=', nComps)
-            print('FILE_TYPE=', fileType)
+    try:
+        with open(fbFilename, 'rb') as fbFile:
+            # Reading the headers, with nb of frames and periods
+            dat = fbFile.read(4)
+            nFrame = struct.unpack('>i', dat)[0]
+            dat = fbFile.read(4)
+            sampPeriod = struct.unpack('>i', dat)[0]
+            dat = fbFile.read(2)
+            sampSize = struct.unpack('>h', dat)[0]
+            nComps = sampSize / 4
+            dat = fbFile.read(2)
+            fileType = struct.unpack('>h', dat)[0]
+            if verbose:
+                print('N_SAMPLES=', nFrame)
+                print('SAMP_PERIOD=', sampPeriod)
+                print('SAMP_SIZE=', sampSize)
+                print('NUM_COMPS=', nComps)
+                print('FILE_TYPE=', fileType)
 
-        # The output matrix containing the data of the .FB file without the headers
-        outputMatrix = numpy.zeros([nFrame, 8])
+            # The output matrix containing the data of the .FB file without the headers
+            outputMatrix = numpy.zeros([nFrame, 8])
 
-        # Reading the values of the formants
-        for n in range(nFrame):
-            # Read 8 floats(F1 F2 F3 F4 B1 B2 B3 B4) in big endian disposition
-            line = fbFile.read(4 * 8)
-            data = struct.unpack('>ffffffff', line)
-            for i, d in enumerate(data):
-                # We want the values in Hz
-                outputMatrix[n][i] = round(d * 1000, 2)
-    return outputMatrix, sampPeriod
+            # Reading the values of the formants
+            for n in range(nFrame):
+                # Read 8 floats(F1 F2 F3 F4 B1 B2 B3 B4) in big endian disposition
+                line = fbFile.read(4 * 8)
+                data = struct.unpack('>ffffffff', line)
+                for i, d in enumerate(data):
+                    # We want the values in Hz
+                    outputMatrix[n][i] = round(d * 1000, 2)
+        return outputMatrix, sampPeriod
+    except FileNotFoundError:
+        return None, 0
 
 
 def GetF2Frequencies(fbFilename):

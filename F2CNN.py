@@ -51,7 +51,7 @@ all:\t\tDoes all of the above
     parser_plot = subparsers.add_parser('plot', help='For plotting spectrogram-like figure from .WAV file.')
     parser_plot.add_argument('--gammatonegram', '-g', dest='gfilename', nargs=None, type=str,
                              help="Plots a spectrogram like figure from the output of a GammaTone FilterBank applied\
-                                  to the given file, and also plots the VTR formants from the .FB file in the same dir")
+                                  to the given file, and if a .FB file exists in the dir, also plots the Formants")
     args = parser.parse_args()
 
     # Starts the command requested

@@ -28,16 +28,16 @@ def GetNewHeightERB(matrix, CENTER_FREQUENCIES):
     """
     height = 0
     ratios = []
-    base = ERBScale(CENTER_FREQUENCIES[-1])     # Lowest frequency's bandwith
+    base = ERBScale(CENTER_FREQUENCIES[-1])  # Lowest frequency's bandwith
     for i, line in enumerate(matrix):
-        erb = ERBScale(CENTER_FREQUENCIES[i])   # The ERB at this center frequency
-        ratio = int(round(erb / base))          # We round up or down the ratio, since pixels are discrete...
+        erb = ERBScale(CENTER_FREQUENCIES[i])  # The ERB at this center frequency
+        ratio = int(round(erb / base))  # We round up or down the ratio, since pixels are discrete...
         ratios.append(ratio)
         height += ratio
     return height, ratios
 
 
-def PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES, Formants, sampPeriod=10000, title=""):
+def PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES, Formants=None, sampPeriod=10000, title=""):
     """
     Plots a spectrogram-like representation of a matrix, with ERB scale as bandwidths, and filename gives the
     :param title: title for the plot
@@ -60,24 +60,26 @@ def PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES, Formants, sampPeriod=100
     plt.imshow(image, norm=LogNorm(), aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
 
     # Plotting the VTR formants over the envelope image
-    formants=[[],[],[],[]]
-    for i in range(4):
-        for j in range(len(Formants)):
-            formants[i].append(Formants[j][i])
-    t = [i * sampPeriod / 1000000. for i in range(len(formants[0]))]
+    formants = [[], [], [], []]
+    if Formants:
+        for i in range(4):
+            for j in range(len(Formants)):
+                formants[i].append(Formants[j][i])
+        t = [i * sampPeriod / 1000000. for i in range(len(formants[0]))]
 
-    plt.title(title)
-    for i, formant in enumerate(formants):
-        plt.plot(t, formant, label='F{} Frequencies (Hz)'.format(i))
-    plt.legend()
+        plt.title(title)
+        for i, formant in enumerate(formants):
+            plt.plot(t, formant, label='F{} Frequencies (Hz)'.format(i))
+        plt.legend()
     plt.show()
 
 
 def PlotEnvelopesAndF2FromFile(filename):
     matrix = GetFilteredOutputFromFile(filename)
-    matrix=ExtractEnvelopeFromMatrix(matrix)
+    matrix = ExtractEnvelopeFromMatrix(matrix)
     CENTER_FREQUENCIES = centre_freqs(16000, 128, 100)
     formants, sampPeriod = ExtractFBFile(os.path.splitext(filename)[0]+'.FB')
-    formants=formants[:,:4]
-    title="'Spectrogram' like representation of envelopes, and formants"
-    PlotEnvelopeSpectrogram(matrix,CENTER_FREQUENCIES,formants, sampPeriod, title)
+    if formants:
+        formants=formants[:,:4]
+    title = "'Spectrogram' like representation of envelopes, and formants"
+    PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES, formants, sampPeriod, title)
