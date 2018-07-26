@@ -15,6 +15,7 @@ import subprocess
 import time
 import wave
 from multiprocessing.pool import Pool
+from multiprocessing import cpu_count
 from os import remove
 from os.path import splitext, join, split
 from shutil import copyfile
@@ -101,6 +102,7 @@ def GammatoneFiltering(wavFile):
 
 
 def FilterAllOrganisedFiles(testMode):
+    exit()
     TotalTime = time.time()
 
     if testMode:
@@ -119,7 +121,8 @@ def FilterAllOrganisedFiles(testMode):
     print(len(wavFiles), "files found")
 
     # Usage of multiprocessing, to reduce computing time
-    proc = 4
+    proc = cpu_count()
+
     multiproc_pool = Pool(processes=proc)
     multiproc_pool.map(GammatoneFiltering, wavFiles)
 

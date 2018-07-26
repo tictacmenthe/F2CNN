@@ -7,7 +7,7 @@ from scripts.EnvelopeExtraction import ExtractAllEnvelopes
 from scripts.LabelDataGenerator import GenerateLabelData
 from scripts.InputGenerator import GenerateInputData
 from scripts.Plotting import PlotEnvelopesAndF2FromFile
-from scripts.CNN.CNN import TrainAndPlotLoss
+from scripts.CNN.CNN import TrainAndPlotLoss, EvaluateOneFile
 
 
 def All(testMode):
@@ -34,7 +34,8 @@ def main():
     }
 
     CNN_FUNCTIONS = {
-        'train':TrainAndPlotLoss
+        'train':TrainAndPlotLoss,
+        'eval':EvaluateOneFile
     }
     helpText = """Data processing commands:\n\t\
 organize:\tOrganizes the files as needed for the rest (Check OrganiseFiles.py documentation)\n\t\
@@ -42,7 +43,7 @@ filter:\t\tApplies the GammaTone FilterBank to the organized files and saves its
 envelope:\tExtracts the filtered files' envelopes and saves them in .ENV1.npy format\n\t\
 label:\t\tGenerates Labeling data for the CNN\n\t\
 input\t\tGenerates Input data for the CNN, requires label first\n\t\
-all:\t\tDoes all of the above
+all:\t\tDoes all of the above, can take some time.
     """
     parser = argparse.ArgumentParser(description="F2CNN Project's entry script.",
                                      epilog="For additional information, add -h after any positional argument")
@@ -73,7 +74,7 @@ all:\t\tDoes all of the above
         print("Plotting for file {}...".format(args.gfilename))
         PlotEnvelopesAndF2FromFile(args.gfilename)
     if 'cnn_command' in args:
-        CNN_FUNCTIONS[args.cnn_command]('')
+        CNN_FUNCTIONS[args.cnn_command]()
 
 if __name__ == '__main__':
     main()

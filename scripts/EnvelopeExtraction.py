@@ -8,6 +8,7 @@ from __future__ import division
 
 import glob
 import time
+from multiprocessing import cpu_count
 from multiprocessing.pool import Pool
 from os.path import splitext, join, split
 
@@ -53,6 +54,7 @@ def lowPassFilter(signal, freq):
     print(B, A)
     return lfilter(B, A, signal, axis=0)
 
+
 def ExtractEnvelopeFromMatrix(matrix):
     # Matrix that will be saved
     envelopes = numpy.zeros(matrix.shape)
@@ -70,6 +72,8 @@ def ExtractEnvelopeFromMatrix(matrix):
             # Save the envelope to the right output channel
             envelopes[i] = filtered_envelope_values
     return envelopes
+
+
 def ExtractEnvelope(gfbFileName):
     """
     Extracts 128 envelopes from the npy matrix stored in the parameter file
@@ -118,7 +122,7 @@ def ExtractAllEnvelopes(testMode):
     print(len(gfbFiles), "files found")
 
     # Usage of multiprocessing, to reduce computing time
-    proc = 4
+    proc = cpu_count()
     multiproc_pool = Pool(processes=proc)
     multiproc_pool.map(ExtractAndSaveEnvelope, gfbFiles)
 

@@ -82,8 +82,6 @@ def GenerateLabelData(testMode):
 
         for step in steps:
             phoneme = GetPhonemeAt(splitext(file)[0] + '.PHN', step[5])
-            if phoneme not in VOWELS:
-                continue
             entry = [region, speaker, sentence, phoneme, step[5]]
             F2Values = numpy.array(GetF2FrequenciesAround(F2Array, step[5], 5))
 
@@ -101,22 +99,8 @@ def GenerateLabelData(testMode):
             # The line to be added to the CSV file, only if the direction of the formant is clear enough (% risk)
             if p < RISK:
                 vowelCounter += 1
-                entry.append(1 if a > 0 else -1)
+                entry.append(1 if a > 0 else 0)
                 csvLines.append(entry)
-                # print(r ** 2, p)
-                # output = a * x + b
-                # print(a, b)
-                # fig = pyplot.figure()
-                # ax = fig.add_subplot(111)
-                #
-                # dots, = ax.plot(x, F2Values, 'r.')
-                # regress, = ax.plot(x, output)
-                # ax.legend((regress, dots), ("Least Squares", "Raw F2 Values"))
-                # pyplot.title("Regression of the F2 values +-50ms around {}th frame".format(step[5]))
-                # valuesString = "r^2={}, p={}, a={}".format(round(r ** 2, 5), round(p, 5), a)
-                # ax.text(-0.1, -0.1, valuesString, transform=ax.transAxes)
-                # ax.text(0.8, -0.1, "File: {}".format(file.split("/")[-1]), transform=ax.transAxes)
-                # pyplot.show(fig)
         print("\t\t{}\tdone !".format(file))
 
     # Saving into a file

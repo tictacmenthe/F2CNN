@@ -6,6 +6,11 @@ import numpy
 
 
 def GetListOfEnvelopeFilesAndTimepoints(labelFilename):
+    """
+    Takes a label csv file, and generates a list of [['TEST' or 'TRAIN', filename], [timepoints]] arrays
+    :param labelFilename: csv label file
+    :return: the described array
+    """
     envFiles = set()
     output = []
     CASE = ['TEST', 'TRAIN']

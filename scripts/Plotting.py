@@ -1,4 +1,6 @@
 import os
+import time
+from os.path import isfile
 
 import matplotlib.pyplot as plt
 import numpy
@@ -57,11 +59,10 @@ def PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES, Formants=None, sampPerio
             image[i + j] = line
         i += j + 1
         r += 1
-    plt.imshow(image, norm=LogNorm(), aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
 
     # Plotting the VTR formants over the envelope image
     formants = [[], [], [], []]
-    if Formants:
+    if Formants is not None:
         for i in range(4):
             for j in range(len(Formants)):
                 formants[i].append(Formants[j][i])
@@ -69,17 +70,22 @@ def PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES, Formants=None, sampPerio
 
         plt.title(title)
         for i, formant in enumerate(formants):
-            plt.plot(t, formant, label='F{} Frequencies (Hz)'.format(i))
+            plt.plot(t, formant, label='F{} Frequencies (Hz)'.format(i+1))
         plt.legend()
+    plt.imshow(image, norm=LogNorm(), aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
     plt.show()
 
 
 def PlotEnvelopesAndF2FromFile(filename):
+    t=time.time()
+    CENTER_FREQUENCIES = centre_freqs(16000, 128, 100)
     matrix = GetFilteredOutputFromFile(filename)
     matrix = ExtractEnvelopeFromMatrix(matrix)
-    CENTER_FREQUENCIES = centre_freqs(16000, 128, 100)
-    formants, sampPeriod = ExtractFBFile(os.path.splitext(filename)[0]+'.FB')
-    if formants:
-        formants=formants[:,:4]
+    fbPath = os.path.splitext(filename)[0] + '.FB'
+    formants, sampPeriod = ExtractFBFile(fbPath)
+    if formants is not None:
+        formants = formants[:, :4]
+    print('compute time:',time.time()-t)
     title = "'Spectrogram' like representation of envelopes, and formants"
     PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES, formants, sampPeriod, title)
+
