@@ -14,6 +14,8 @@ import struct
 import subprocess
 import time
 import wave
+from configparser import ConfigParser
+from itertools import product
 from multiprocessing.pool import Pool
 from multiprocessing import cpu_count
 from os import remove
@@ -24,17 +26,10 @@ import numpy
 from gammatone import filters
 
 
-# ##### PREPARATION OF FILTERBANK
-# CENTER FREQUENCIES ON ERB SCALE
-CENTER_FREQUENCIES = filters.centre_freqs(16000, 128, 100)
-# Filter coefficient for a Gammatone filterbank
-FILTERBANK_COEFFICIENTS = filters.make_erb_filters(16000, CENTER_FREQUENCIES)
-# TODO: Generate these with input parameters
-
-
-def GetFilteredOutputFromFile(filename):
+def GetFilteredOutputFromFile(filename, FILTERBANK_COEFFICIENTS):
     """
     Computes the output of a gammatone filterbank applied to the WAV file 'filename'
+    :param FILTERBANK_COEFFICIENTS
     :param filename: path to a WAV file
     :return: number of frames in the file, and output matrix (128*nbframes) of the filterbank
     """
@@ -56,10 +51,10 @@ def GetFilteredOutputFromFile(filename):
     # plt.plot(t, wavList)
     # plt.show()
 
-    return GetFilteredOutputFromArray(wavList)
+    return GetFilteredOutputFromArray(wavList, FILTERBANK_COEFFICIENTS), wavFile.getframerate()
 
 
-def GetFilteredOutputFromArray(array):
+def GetFilteredOutputFromArray(array, FILTERBANK_COEFFICIENTS):
     # gammatone library needs a numpy array
     # Application of the filterbank to a vector
     filteredMatrix = filters.erb_filterbank(array,
@@ -88,12 +83,12 @@ def loadGFBMatrix(filename):
     return numpy.load(filename + '.npy')
 
 
-def GammatoneFiltering(wavFile):
+def GammatoneFiltering(wavFile, FILTERBANK_COEFFICIENTS):
     gfbFilename = splitext(wavFile)[0] + '.GFB'
     print("Filtering:\t{}".format(wavFile))
 
     # Compute the filterbank output
-    outputMatrix = GetFilteredOutputFromFile(wavFile)
+    outputMatrix, _ = GetFilteredOutputFromFile(wavFile, FILTERBANK_COEFFICIENTS)
 
     # Save file to .GFB.npy format
     print("Saving:\t\t{}".format(gfbFilename))
@@ -102,7 +97,6 @@ def GammatoneFiltering(wavFile):
 
 
 def FilterAllOrganisedFiles(testMode):
-    exit()
     TotalTime = time.time()
 
     if testMode:
@@ -120,11 +114,24 @@ def FilterAllOrganisedFiles(testMode):
 
     print(len(wavFiles), "files found")
 
+    # #### READING CONFIG FILE
+    config = ConfigParser()
+    config.read('F2CNN.conf')
+    framerate = config.getint('FILTERBANK', 'FRAMERATE')
+    nchannels = config.getint('FILTERBANK', 'NCHANNELS')
+    lowcutoff = config.getint('FILTERBANK', 'LOW')
+    # ##### PREPARATION OF FILTERBANK
+    # CENTER FREQUENCIES ON ERB SCALE
+    CENTER_FREQUENCIES = filters.centre_freqs(framerate, nchannels, lowcutoff)
+    # Filter coefficient for a Gammatone filterbank
+    FILTERBANK_COEFFICIENTS = filters.make_erb_filters(framerate, CENTER_FREQUENCIES)
+
     # Usage of multiprocessing, to reduce computing time
     proc = cpu_count()
 
     multiproc_pool = Pool(processes=proc)
-    multiproc_pool.map(GammatoneFiltering, wavFiles)
+    arguments = product(wavFiles, [FILTERBANK_COEFFICIENTS])
+    multiproc_pool.starmap(GammatoneFiltering, arguments)
 
     print("Filtered and Saved all files.")
     print('                Total time:', time.time() - TotalTime)

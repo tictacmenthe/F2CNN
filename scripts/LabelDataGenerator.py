@@ -5,6 +5,7 @@ Region(DR1-8),SpeakerID,SentenceID,framepoint,slope,p-valueOfSlope,slopeSign(+-1
 Requires a prior execution of the OrganiseFiles.py, GammatoneFiltering.py, EnvelopeExtraction.py scripts' main functions
 
 """
+from configparser import ConfigParser
 
 import numpy
 import csv
@@ -21,20 +22,24 @@ from .PHNFileReader import GetPhonemeAt, VOWELS
 
 def GetLabels(testMode):
     if testMode:
-        filepath='testFiles/trainingData/label_data.csv'
+        filepath = 'testFiles/trainingData/label_data.csv'
     else:
-        filepath='trainingData/label_data.csv'
-    with open(filepath,'r') as labelDataFile:
-        csvReader=csv.reader(labelDataFile)
+        filepath = 'trainingData/label_data.csv'
+    with open(filepath, 'r') as labelDataFile:
+        csvReader = csv.reader(labelDataFile)
         return [int(line[-1]) for line in csvReader]
 
 
 def GenerateLabelData(testMode):
-    print(split(__file__)[1])
-    STEP = 160
-    START = 5 * STEP
-    RISK = 0.05  # 5%
     TotalTime = time.time()
+
+    # #### READING CONFIG FILE
+    config = ConfigParser()
+    config.read('F2CNN.conf')
+    radius = config.getint('CNN', 'RADIUS')
+    RISK = config.getfloat('CNN', 'RISK')
+    ustos=1./1000000
+    dotsperinput=radius*2+1
 
     if testMode:
         # Test files
@@ -43,7 +48,8 @@ def GenerateLabelData(testMode):
         # Get all the files under resources
         filenames = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))
 
-    print("\n###############################\nGenerating Label Data from files in '{}'.".format(split(split(filenames[0])[0])[0]))
+    print("\n###############################\nGenerating Label Data from files in '{}'.".format(
+        split(split(filenames[0])[0])[0]))
 
     # Alphanumeric order
     filenames = sorted(filenames)
@@ -60,30 +66,33 @@ def GenerateLabelData(testMode):
     # Get the data into a list of lists for the CSV
     for i, file in enumerate(filenames):
         print(i, "Reading:\t{}".format(file))
+        # Load the F2 values of the file
+        F2Array, sampPeriod = GetF2Frequencies(splitext(file)[0] + '.FB')
 
         # Get number of points
         wavFile = wave.open(file, 'r')
-        nb = int((wavFile.getnframes() / wavFile.getframerate() - 0.11) / 0.01)
+        framerate=wavFile.getframerate()
+        nb = int((wavFile.getnframes() / framerate - dotsperinput*sampPeriod*ustos)*100)
         wavFile.close()
 
         # Get the information about the person
         region, speaker, sentence, _ = split(file)[1].split(".")
 
+
         # Discretization of the values for each entry required
+        STEP = int(framerate*sampPeriod*ustos)
+        START = int(STEP * (radius + 0.5))  # add a 0.5 dot margin, to prevent marginal cases
         currentStep = START
         steps = []
         for t in range(nb):
-            entry = [currentStep + (k - 5) * STEP for k in range(11)]
+            entry = [currentStep + (k - radius) * STEP for k in range(dotsperinput)]
             currentStep += STEP
             steps.append(entry)
 
-        # Load the F2 values of the file
-        F2Array, _ = GetF2Frequencies(splitext(file)[0] + '.FB')
-
         for step in steps:
-            phoneme = GetPhonemeAt(splitext(file)[0] + '.PHN', step[5])
-            entry = [region, speaker, sentence, phoneme, step[5]]
-            F2Values = numpy.array(GetF2FrequenciesAround(F2Array, step[5], 5))
+            phoneme = GetPhonemeAt(splitext(file)[0] + '.PHN', step[radius])
+            entry = [region, speaker, sentence, phoneme, step[radius]]
+            F2Values = numpy.array(GetF2FrequenciesAround(F2Array, step[radius], radius))
 
             # Least Squares Method for linear regression of the F2 values
             x = numpy.array(step)

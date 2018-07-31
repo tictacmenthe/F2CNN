@@ -13,13 +13,7 @@ from multiprocessing.pool import Pool
 from os.path import splitext, join, split
 
 import numpy
-from scipy.signal import hilbert, butter, lfilter
-
-
-SAMPLING_RATE = 16000
-CUTOFF = 100
-METHOD = 1
-LP_FILTERING = False
+from scipy.signal import hilbert
 
 
 def paddedHilbert(signal):
@@ -38,21 +32,7 @@ def paddedHilbert(signal):
     result = hilbert(tohilbert)
     # Remove excess values
     result = result[0:len(signal)]
-
     return result
-
-
-def lowPassFilter(signal, freq):
-    """
-    Applies a butterworth low pass filter to the signal
-    :param signal: the signal that will be filtered
-    :param freq: the cutoff frequency
-    :return: the filtered signal
-    """
-    # The A et B parameter arrays of the filter
-    B, A = butter(1, freq / (SAMPLING_RATE / 2), 'low')
-    print(B, A)
-    return lfilter(B, A, signal, axis=0)
 
 
 def ExtractEnvelopeFromMatrix(matrix):
@@ -64,13 +44,7 @@ def ExtractEnvelopeFromMatrix(matrix):
         # Envelope extraction
         analytic_signal = paddedHilbert(signal)
         amplitude_envelope = numpy.abs(analytic_signal)
-        if not LP_FILTERING:
-            envelopes[i] = amplitude_envelope
-        else:
-            # Low Pass Filter with Butterworth 'CUTOFF' Hz filter
-            filtered_envelope_values = lowPassFilter(amplitude_envelope, CUTOFF)
-            # Save the envelope to the right output channel
-            envelopes[i] = filtered_envelope_values
+        envelopes[i] = amplitude_envelope
     return envelopes
 
 
@@ -82,7 +56,7 @@ def ExtractEnvelope(gfbFileName):
     print("File:\t\t{}".format(gfbFileName))
     # Load the matrix
     matrix = numpy.load(gfbFileName)
-    envelopes=ExtractEnvelopeFromMatrix(matrix)
+    envelopes = ExtractEnvelopeFromMatrix(matrix)
     print("\t\t{}\tdone !".format(gfbFileName))
     return envelopes
 
@@ -93,6 +67,7 @@ def SaveEnvelope(matrix, gfbFileName):
     :param matrix: the (128 * nbframes) matrix of envelopes to be saved
     :param gfbFileName: the original filename
     """
+    METHOD = 1
     # Envelope file nane is NAME.ENV+METHOD NUMBER.npy (.ENV1,.ENV2...)
     envelopeFilename = splitext(splitext(gfbFileName)[0])[0] + ".ENV" + str(METHOD)
     numpy.save(envelopeFilename, matrix)
@@ -102,7 +77,7 @@ def ExtractAndSaveEnvelope(gfbFileName):
     SaveEnvelope(ExtractEnvelope(gfbFileName), gfbFileName)
 
 
-def ExtractAllEnvelopes(testMode):
+def ExtractAllEnvelopes(testMode=False):
     # # In case you need to print numpy outputs:
     # numpy.set_printoptions(threshold=numpy.inf, suppress=True)
     TotalTime = time.time()

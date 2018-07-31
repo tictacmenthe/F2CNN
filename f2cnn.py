@@ -1,5 +1,4 @@
 import argparse
-from os.path import isfile
 
 from scripts.OrganiseFiles import OrganiseAllFiles
 from scripts.GammatoneFiltering import FilterAllOrganisedFiles
@@ -7,7 +6,7 @@ from scripts.EnvelopeExtraction import ExtractAllEnvelopes
 from scripts.LabelDataGenerator import GenerateLabelData
 from scripts.InputGenerator import GenerateInputData
 from scripts.Plotting import PlotEnvelopesAndF2FromFile
-from scripts.CNN.CNN import TrainAndPlotLoss, EvaluateOneFile
+from scripts.CNN.CNN import TrainAndPlotLoss, EvaluateOneFile, EvaluateRandom
 
 
 def All(testMode):
@@ -34,8 +33,9 @@ def main():
     }
 
     CNN_FUNCTIONS = {
-        'train':TrainAndPlotLoss,
-        'eval':EvaluateOneFile
+        'train': TrainAndPlotLoss,
+        'eval': EvaluateOneFile,
+        'evalrand': EvaluateRandom
     }
     helpText = """Data processing commands:\n\t\
 organize:\tOrganizes the files as needed for the rest (Check OrganiseFiles.py documentation)\n\t\
@@ -75,6 +75,7 @@ all:\t\tDoes all of the above, can take some time.
         PlotEnvelopesAndF2FromFile(args.gfilename)
     if 'cnn_command' in args:
         CNN_FUNCTIONS[args.cnn_command]()
+
 
 if __name__ == '__main__':
     main()
