@@ -4,6 +4,7 @@ import csv
 import glob
 import os
 import time
+from configparser import ConfigParser
 
 import keras
 import numpy
@@ -12,7 +13,7 @@ from keras.layers import Dense, Dropout, Flatten
 from keras.models import Sequential
 from matplotlib import pyplot
 
-from gammatone.filters import centre_freqs
+from gammatone import filters
 from scripts.EnvelopeExtraction import ExtractEnvelopeFromMatrix
 from scripts.FBFileReader import ExtractFBFile
 from scripts.GammatoneFiltering import GetFilteredOutputFromFile
@@ -162,10 +163,24 @@ def TrainAndPlotLoss():
     pyplot.show(fig)
 
 
-def EvaluateOneFile(wavFileName='resources/f2cnn/TRAIN/DR3.FCKE0.SI1111.WAV'):
+def EvaluateOneFile(wavFileName='resources/f2cnn/TEST/DR1.FELC0.SX216.WAV'):
     print("File:\t\t{}".format(wavFileName))
 
-    filtered, framerate = GetFilteredOutputFromFile(wavFileName)
+    # #### READING CONFIG FILE
+    config = ConfigParser()
+    config.read('F2CNN.conf')
+    framerate = config.getint('FILTERBANK', 'FRAMERATE')
+    nchannels = config.getint('FILTERBANK', 'NCHANNELS')
+    lowcutoff = config.getint('FILTERBANK', 'LOW')
+
+    ustos=1/1000000.
+    # ##### PREPARATION OF FILTERBANK
+    # CENTER FREQUENCIES ON ERB SCALE
+    CENTER_FREQUENCIES = filters.centre_freqs(framerate, nchannels, lowcutoff)
+    # Filter coefficient for a Gammatone filterbank
+    FILTERBANK_COEFFICIENTS = filters.make_erb_filters(framerate, CENTER_FREQUENCIES)
+
+    filtered, framerate = GetFilteredOutputFromFile(wavFileName, FILTERBANK_COEFFICIENTS)
     fbPath = os.path.splitext(wavFileName)[0] + '.FB'
     formants, sampPeriod = ExtractFBFile(fbPath)
     envelope = ExtractEnvelopeFromMatrix(filtered)
@@ -174,7 +189,7 @@ def EvaluateOneFile(wavFileName='resources/f2cnn/TRAIN/DR3.FCKE0.SI1111.WAV'):
     input_data = numpy.zeros([nb, 11, 128])
     print(input_data.shape)
     START = int(0.055 * framerate)
-    STEP = framerate*sampPeriod/1000000.
+    STEP = int(framerate*sampPeriod*ustos)
     for i in range(0, nb):
         input_data[i] = [[channel[START + i + (k - 5) * STEP] for channel in envelope] for k in range(11)]
     for i, matrix in enumerate(input_data):
@@ -184,7 +199,6 @@ def EvaluateOneFile(wavFileName='resources/f2cnn/TRAIN/DR3.FCKE0.SI1111.WAV'):
     scores = model.predict(input_data.reshape(nb, 11, 128, 1))
     rising = [-100 if neg > pos else 100 for neg, pos in scores]
     falling = [100 if neg > pos else -100 for neg, pos in scores]
-    CENTER_FREQUENCIES = centre_freqs(framerate, 128, 100)
     PlotEnvelopesAndCNNResults(envelope, rising, falling, CENTER_FREQUENCIES, formants, sampPeriod, wavFileName)
     print("\t\t{}\tdone !".format(wavFileName))
 

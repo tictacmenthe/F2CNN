@@ -5,8 +5,15 @@ This file includes funcitons allowing to read phonemes from TIMIT database's .PH
 
 import csv
 
+STOPS = ['b', 'd', 'g', 'p', 't', 'k', 'dx', 'q']
+AFFRICATIVES = ['jh', 'ch']
+FRICATIVES = ['s', 'sh', 'w', 'wh', 'f', 'th', 'v', 'dh']
+NASALS = ['m', 'n', 'ng', 'em', 'en', 'eng', 'nx']
+SEMIVOWELS_AND_GLIDES = ['l', 'r', 'w', 'y', 'hh', 'hv', 'el']
 VOWELS = ["iy", "ih", "eh", "ey", "ae", "aa", "aw", "ay", "ah", "ao",
           "oy", "ow", "uh", "uw", "ux", "er", "ax", "ix", "axr", "ax-h"]
+
+SILENTS = ['pau', 'epi', 'h#']
 
 
 def ExtractPhonemes(phnFilename):

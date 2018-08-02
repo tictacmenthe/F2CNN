@@ -22,12 +22,13 @@ def printBytes(byteStr):
 def ExtractFBFile(fbFilename, verbose=False):
     # The file to read from, in binary reading mode
     try:
-        with open(fbFilename, 'rb') as fbFile:
+        with open(fbFilename, 'r+b') as fbFile:
             # Reading the headers, with nb of frames and periods
             dat = fbFile.read(4)
             nFrame = struct.unpack('>i', dat)[0]
             dat = fbFile.read(4)
-            sampPeriod = struct.unpack('>i', dat)[0]
+            sampPeriod = 10000  # struct.unpack('>i', dat)[0]
+            # TODO: one of the VTR database files has an unusual sampling period (100 000 not 10 000)
             dat = fbFile.read(2)
             sampSize = struct.unpack('>h', dat)[0]
             nComps = sampSize / 4

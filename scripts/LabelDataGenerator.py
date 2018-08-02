@@ -1,7 +1,7 @@
 """
 
 This file generates labelling data for the CNN, as a .CSV file of columns:
-Region(DR1-8),SpeakerID,SentenceID,framepoint,slope,p-valueOfSlope,slopeSign(+-1)
+TESTorTRAIN,Region(DR1-8),SpeakerID,SentenceID,framepoint,slope,p-valueOfSlope,slopeSign(+-1)
 Requires a prior execution of the OrganiseFiles.py, GammatoneFiltering.py, EnvelopeExtraction.py scripts' main functions
 
 """
@@ -17,7 +17,7 @@ from scipy.stats import pearsonr
 from os.path import join, split, splitext, isdir
 
 from .FBFileReader import GetF2Frequencies, GetF2FrequenciesAround
-from .PHNFileReader import GetPhonemeAt, VOWELS
+from .PHNFileReader import GetPhonemeAt, SILENTS
 
 
 def GetLabels(testMode):
@@ -77,7 +77,7 @@ def GenerateLabelData(testMode):
 
         # Get the information about the person
         region, speaker, sentence, _ = split(file)[1].split(".")
-
+        testOrTrain=split(split(file)[0])[1]
 
         # Discretization of the values for each entry required
         STEP = int(framerate*sampPeriod*ustos)
@@ -91,7 +91,11 @@ def GenerateLabelData(testMode):
 
         for step in steps:
             phoneme = GetPhonemeAt(splitext(file)[0] + '.PHN', step[radius])
-            entry = [region, speaker, sentence, phoneme, step[radius]]
+            if phoneme in SILENTS:
+                continue
+            if not phoneme:
+                break
+            entry = [testOrTrain, region, speaker, sentence, phoneme, step[radius]]
             F2Values = numpy.array(GetF2FrequenciesAround(F2Array, step[radius], radius))
 
             # Least Squares Method for linear regression of the F2 values
@@ -124,6 +128,6 @@ def GenerateLabelData(testMode):
         writer = csv.writer(outputFile)
         for line in csvLines:
             writer.writerow(line)
-    print("Generated Label Data CSV of", vowelCounter, "(vowels only) lines.")
+    print("Generated Label Data CSV of", vowelCounter, "lines.")
     print('                Total time:', time.time() - TotalTime)
     print('')

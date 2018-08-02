@@ -11,30 +11,15 @@ def GetListOfEnvelopeFilesAndTimepoints(labelFilename):
     :param labelFilename: csv label file
     :return: the described array
     """
-    envFiles = set()
-    output = []
-    CASE = ['TEST', 'TRAIN']
-    currentCase = 0
-    lastRegion = 'DR1'
-    lastFile = ()
-    file = ()
+    output = dict()
     with open(labelFilename, 'r') as labelFile:
         csvLabelReader = csv.reader(labelFile)
-        fileTimepoints = []
-        for i, (region, speaker, sentence, phoneme, timepoint, slope, pvalue, sign) in enumerate(csvLabelReader):
-            if region != lastRegion:  # If there is a change in region
-                if region == 'DR1':  # And the change is to a DR1
-                    currentCase += 1  # It means we transition form TEST to TRAIN
-                lastRegion = region
-            file = (CASE[currentCase], '.'.join((region, speaker, sentence, 'ENV1.npy')))
-
-            if file not in envFiles and lastFile:
-                output.append((lastFile, fileTimepoints))
-                fileTimepoints = []
-            envFiles.add(file)
-            lastFile = file
-            fileTimepoints.append(int(timepoint))
-        output.append((file, fileTimepoints))
+        for i, (testOrTrain, region, speaker, sentence, phoneme, timepoint, slope, pvalue, sign) in enumerate(csvLabelReader):
+            file = join(testOrTrain, '.'.join((region, speaker, sentence, 'ENV1.npy')))
+            if file not in output.keys():
+                output[file]=[timepoint]
+            else:
+                output[file].append(timepoint)
     return output
 
 
@@ -56,11 +41,11 @@ def GenerateInputData(testMode):
             exit(-1)
         csvFilename = join("trainingData", "label_data.csv")
 
-    envFilesAndTimepoints = GetListOfEnvelopeFilesAndTimepoints(csvFilename)
+    filesAndTimepointsDict = GetListOfEnvelopeFilesAndTimepoints(csvFilename)
 
     print("\n###############################\nGenerating Input Data from files with '{}'.".format(csvFilename))
 
-    if not envFilesAndTimepoints:
+    if not filesAndTimepointsDict:
         print("NO ENV1.npy FILES FOUND")
         exit(-1)
 
