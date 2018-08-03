@@ -21,7 +21,7 @@ def ExtractPhonemes(phnFilename):
     with open(phnFilename, 'r') as phnFile:
         reader = csv.reader(phnFile, delimiter=' ')
         for line in reader:
-            data.append([int(line[0]), int(line[1]), line[2]])
+            data.append((line[2], int(line[0]), int(line[1])))  # (phoneme, start, end) tuples
     return data
 
 

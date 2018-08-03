@@ -17,7 +17,8 @@ from gammatone import filters
 from scripts.EnvelopeExtraction import ExtractEnvelopeFromMatrix
 from scripts.FBFileReader import ExtractFBFile
 from scripts.GammatoneFiltering import GetFilteredOutputFromFile
-from scripts.Plotting import PlotEnvelopesAndCNNResults
+from scripts.PHNFileReader import ExtractPhonemes
+from scripts.Plotting import PlotEnvelopesAndCNNResultsWithPhonemes
 
 numpy.set_printoptions(threshold=numpy.inf)
 
@@ -53,18 +54,13 @@ def normalizeInput(matrix: numpy.ndarray):
 def SeparateTestTrain(pathToInput, pathToLabel):
     x = [[], []]
     y = [[], []]
-    currentCase = 0
-    lastRegion = 'DR1'
     input_data = numpy.load(pathToInput)
     with open(pathToLabel, 'r') as labels:
         reader = csv.reader(labels)
-        for i, (region, speaker, sentence, phoneme, timepoint, slope, pvalue, sign) in enumerate(reader):
-            if region != lastRegion:  # If there is a change in region
-                if region == 'DR1':  # And the change is to a DR1
-                    currentCase += 1  # It means we transition form TEST to TRAIN
-                lastRegion = region
-            x[currentCase].append(input_data[i])
-            y[currentCase].append(int(sign))
+        for i, (test, region, speaker, sentence, phoneme, timepoint, slope, pvalue, sign) in enumerate(reader):
+            test=test=='TEST'
+            x[0 if test else 1].append(input_data[i])
+            y[0 if test else 1].append(int(sign))
     return numpy.array(x[0]), numpy.array(y[0]), numpy.array(x[1]), numpy.array(y[1])
 
 
@@ -163,9 +159,8 @@ def TrainAndPlotLoss():
     pyplot.show(fig)
 
 
-def EvaluateOneFile(wavFileName='resources/f2cnn/TEST/DR1.FELC0.SX216.WAV'):
+def EvaluateOneFile(wavFileName='resources/f2cnn/TRAIN/DR3.FCKE0.SI1111.WAV'):
     print("File:\t\t{}".format(wavFileName))
-
     # #### READING CONFIG FILE
     config = ConfigParser()
     config.read('F2CNN.conf')
@@ -182,9 +177,11 @@ def EvaluateOneFile(wavFileName='resources/f2cnn/TEST/DR1.FELC0.SX216.WAV'):
 
     filtered, framerate = GetFilteredOutputFromFile(wavFileName, FILTERBANK_COEFFICIENTS)
     fbPath = os.path.splitext(wavFileName)[0] + '.FB'
+    phnPath = os.path.splitext(wavFileName)[0] + '.PHN'
     formants, sampPeriod = ExtractFBFile(fbPath)
     envelope = ExtractEnvelopeFromMatrix(filtered)
-
+    phonemes = ExtractPhonemes(phnPath)
+    print(phonemes)
     nb = int(len(envelope[0]) - 0.11*framerate)
     input_data = numpy.zeros([nb, 11, 128])
     print(input_data.shape)
@@ -196,10 +193,11 @@ def EvaluateOneFile(wavFileName='resources/f2cnn/TEST/DR1.FELC0.SX216.WAV'):
         input_data[i] = normalizeInput(matrix)
     input_data.astype('float32')
     model = keras.models.load_model('trained_model')
+    # scores = model.evaluate(input_data, )
     scores = model.predict(input_data.reshape(nb, 11, 128, 1))
-    rising = [-100 if neg > pos else 100 for neg, pos in scores]
-    falling = [100 if neg > pos else -100 for neg, pos in scores]
-    PlotEnvelopesAndCNNResults(envelope, rising, falling, CENTER_FREQUENCIES, formants, sampPeriod, wavFileName)
+    rising = [-100 if neg > pos else 200 for neg, pos in scores]
+    falling = [200 if neg > pos else -100 for neg, pos in scores]
+    PlotEnvelopesAndCNNResultsWithPhonemes(envelope, rising, falling, CENTER_FREQUENCIES, phonemes, formants, sampPeriod, wavFileName)
     print("\t\t{}\tdone !".format(wavFileName))
 
 

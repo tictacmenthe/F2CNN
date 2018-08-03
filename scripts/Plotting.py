@@ -13,6 +13,7 @@ from gammatone.filters import centre_freqs
 from .EnvelopeExtraction import ExtractEnvelopeFromMatrix
 from .FBFileReader import ExtractFBFile
 from .GammatoneFiltering import GetFilteredOutputFromFile
+from .LabelDataGenerator import GetLabelsFromFile
 
 
 def ERBScale(f):
@@ -97,24 +98,34 @@ def PlotEnvelopesAndF2FromFile(filename):
     PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES, formants, sampPeriod, title)
 
 
-def PlotEnvelopesAndCNNResults(envelopes, rising, falling, CENTER_FREQUENCIES, Formants=None, sampPeriod=0, title=""):
+def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, rising, falling, CENTER_FREQUENCIES, phonemes, Formants=None, sampPeriod=0, title=""):
     image = ReshapeEnvelopesForSpectrogram(envelopes, CENTER_FREQUENCIES)
     formant = []
     fig = plt.figure(figsize=(25, 13))
-    aximg = fig.add_subplot(111)
+    aximg = fig.add_subplot(211)
     aximg.imshow(image, norm=LogNorm(), aspect="auto", extent=[0, len(envelopes[0]) / 16000., 100, 7795])
     aximg.autoscale(False)
     if Formants is not None:
         for j in range(len(Formants)):
             formant.append(Formants[j][1])
-    xformant = [i * sampPeriod / 1000000. for i in range(len(formant))]
-    xres = numpy.linspace(0.055, xformant[-1] - 0.055, len(rising))
+        xformant = [i * sampPeriod / 1000000. for i in range(len(formant))]
+        aximg.plot(xformant, formant, 'k-', label='F{} Frequencies (Hz)'.format(2))
+    xres = numpy.linspace(0.055, len(image[0])/16000-0.055, len(rising))
     aximg.plot(xres, rising, 'r|', label='Rising')
     aximg.plot(xres, falling, 'b|', label='Falling')
-    aximg.plot(xformant, formant, 'k-',  label='F{} Frequencies (Hz)'.format(2))
     aximg.set_xlabel("Time(s)")
     aximg.set_ylabel("Frequency(Hz)")
+    axproba = fig.add_subplot(212)
+    axproba.axis([0,len(image[0])/16000, 0, 1])
+    # Plotting the phonemes
+    for phoneme, start, end in phonemes:
+        axproba.axvline(end/16000)
+        axproba.text((end+start)/32000, 0.95, phoneme, fontsize=14, horizontalalignment='center', verticalalignment='center', weight='bold')
+
+
+    # GetLabelsFromFile('resources/f2cnn/TEST/DR1.FELC0.SX216.WAV')
     plt.legend()
     plt.title(title)
+    # plt.show()
     plt.savefig(os.path.join("graphs", "FallingOrRising", "FallingOrRising" + os.path.split(title)[1] + ".png"), dpi=100)
     plt.close(fig)
