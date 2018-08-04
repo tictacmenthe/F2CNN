@@ -19,11 +19,12 @@ from os.path import join, split, splitext, isdir
 from .FBFileReader import GetF2Frequencies, GetF2FrequenciesAround
 from .PHNFileReader import GetPhonemeAt, SILENTS
 
+
 def GetLabelsFromFile(filename):
     testOrTrain, filename = split(filename)
     testOrTrain = split(testOrTrain)[1]
     region, speaker, sentence = splitext(filename)[0].split('.')
-    print(testOrTrain,region, speaker, sentence)
+    print(testOrTrain, region, speaker, sentence)
 
 
 def GenerateLabelData(testMode):
@@ -34,8 +35,9 @@ def GenerateLabelData(testMode):
     config.read('F2CNN.conf')
     radius = config.getint('CNN', 'RADIUS')
     RISK = config.getfloat('CNN', 'RISK')
-    ustos=1./1000000
-    dotsperinput=radius*2+1
+    sampPeriod = config.getint('CNN', 'sampperiod') / 1000000
+    framerate = config.getint('FILTERBANK', 'framerate')
+    dotsperinput = radius * 2 + 1
 
     if testMode:
         # Test files
@@ -63,20 +65,20 @@ def GenerateLabelData(testMode):
     for i, file in enumerate(filenames):
         print(i, "Reading:\t{}".format(file))
         # Load the F2 values of the file
-        F2Array, sampPeriod = GetF2Frequencies(splitext(file)[0] + '.FB')
+        F2Array, _ = GetF2Frequencies(splitext(file)[0] + '.FB')
 
         # Get number of points
         wavFile = wave.open(file, 'r')
-        framerate=wavFile.getframerate()
-        nb = int((wavFile.getnframes() / framerate - dotsperinput*sampPeriod*ustos)*100)
+        framerate = wavFile.getframerate()
+        nb = int((wavFile.getnframes() / framerate - dotsperinput * sampPeriod) * 100)
         wavFile.close()
 
         # Get the information about the person
         region, speaker, sentence, _ = split(file)[1].split(".")
-        testOrTrain=split(split(file)[0])[1]
+        testOrTrain = split(split(file)[0])[1]
 
         # Discretization of the values for each entry required
-        STEP = int(framerate*sampPeriod*ustos)
+        STEP = int(framerate * sampPeriod)
         START = int(STEP * (radius + 0.5))  # add a 0.5 dot margin, to prevent marginal cases
         currentStep = START
         steps = []
@@ -98,7 +100,8 @@ def GenerateLabelData(testMode):
             x = numpy.array(step)
             A = numpy.vstack([x, numpy.ones(len(x))]).T
             [a, b], _, _, _ = numpy.linalg.lstsq(A, F2Values, rcond=None)
-
+            print(A.shape, F2Values.shape)
+            exit()
             # Pearson Correlation Coefficient r and p-value p using scipy.stats.pearsonr
             r, p = pearsonr(F2Values, a * x + b)
 

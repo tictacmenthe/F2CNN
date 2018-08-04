@@ -176,10 +176,9 @@ def EvaluateOneFile(wavFileName='resources/f2cnn/TRAIN/DR3.FCKE0.SI1111.WAV'):
     formants, sampPeriod = ExtractFBFile(fbPath)
     envelope = ExtractEnvelopeFromMatrix(filtered)
     phonemes = ExtractPhonemes(phnPath)
-    print(phonemes)
     nb = int(len(envelope[0]) - 0.11*framerate)
     input_data = numpy.zeros([nb, 11, 128])
-    print(input_data.shape)
+    print("INPUT SHAPE:",input_data.shape)
     START = int(0.055 * framerate)
     STEP = int(framerate*sampPeriod*ustos)
     for i in range(0, nb):
@@ -190,9 +189,7 @@ def EvaluateOneFile(wavFileName='resources/f2cnn/TRAIN/DR3.FCKE0.SI1111.WAV'):
     model = load_model('trained_model')
     # scores = model.evaluate(input_data, )
     scores = model.predict(input_data.reshape(nb, 11, 128, 1))
-    rising = [-100 if neg > pos else 200 for neg, pos in scores]
-    falling = [200 if neg > pos else -100 for neg, pos in scores]
-    PlotEnvelopesAndCNNResultsWithPhonemes(envelope, rising, falling, CENTER_FREQUENCIES, phonemes, formants, sampPeriod, wavFileName)
+    PlotEnvelopesAndCNNResultsWithPhonemes(envelope, scores, CENTER_FREQUENCIES, phonemes, formants, sampPeriod, wavFileName)
     print("\t\t{}\tdone !".format(wavFileName))
 
 
@@ -202,6 +199,7 @@ def EvaluateRandom(testMode=False):
     TotalTime = time.time()
 
     if not os.path.isdir("graphs"):
+        os.mkdir('graphs')
         os.mkdir(os.path.join('graphs','FallingOrRising'))
     if testMode:
         # # Test Files
@@ -209,7 +207,7 @@ def EvaluateRandom(testMode=False):
     else:
         # Get all the WAV files under resources/fcnn
         wavFiles = glob.glob(os.path.join('resources', 'f2cnn', '*', '*.WAV'))
-    print("\n###############################\nEvaluating network on WAV files in '{}'.".format(os.path.split(wavFiles[0])[0]))
+    print("\n###############################\nEvaluating network on WAV {} files in '{}'.".format(len(wavFiles),os.path.split(wavFiles[0])[0]))
 
     if not wavFiles:
         print("NO WAV FILES FOUND")

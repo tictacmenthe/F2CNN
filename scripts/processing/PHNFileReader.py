@@ -34,5 +34,5 @@ def GetPhonemeAt(phnFilename, timepoint):
     """
     data = ExtractPhonemes(phnFilename)
     for line in data:
-        if line[0] <= timepoint <= line[1]:
-            return line[2]
+        if line[1] <= timepoint <= line[2]:
+            return line[0]
