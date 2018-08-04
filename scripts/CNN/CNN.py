@@ -5,33 +5,19 @@ import glob
 import os
 import time
 from configparser import ConfigParser
-
-import keras
 import numpy
-from keras.layers import Conv2D, MaxPooling2D, Activation
-from keras.layers import Dense, Dropout, Flatten
-from keras.models import Sequential
+
+
 from matplotlib import pyplot
 
 from gammatone import filters
-from scripts.EnvelopeExtraction import ExtractEnvelopeFromMatrix
-from scripts.FBFileReader import ExtractFBFile
-from scripts.GammatoneFiltering import GetFilteredOutputFromFile
-from scripts.PHNFileReader import ExtractPhonemes
+from scripts.processing.EnvelopeExtraction import ExtractEnvelopeFromMatrix
+from scripts.processing.FBFileReader import ExtractFBFile
+from scripts.processing.GammatoneFiltering import GetFilteredOutputFromFile
+from scripts.processing.PHNFileReader import ExtractPhonemes
 from scripts.Plotting import PlotEnvelopesAndCNNResultsWithPhonemes
 
 numpy.set_printoptions(threshold=numpy.inf)
-
-
-class BatchPlotter(keras.callbacks.Callback):
-    def __init__(self):
-        super().__init__()
-        self.acc = []
-        self.loss = []
-
-    def on_batch_end(self, batch, logs=None):
-        self.acc.append(logs['acc'])
-        self.loss.append(logs['loss'])
 
 
 def normalizeInput(matrix: numpy.ndarray):
@@ -65,6 +51,14 @@ def SeparateTestTrain(pathToInput, pathToLabel):
 
 
 def TrainAndPlotLoss():
+    from keras.layers import Conv2D, MaxPooling2D, Activation
+    from keras.layers import Dense, Dropout, Flatten
+    from keras.models import Sequential
+    from keras.utils import to_categorical
+    from keras.optimizers import rmsprop
+    from keras.losses import categorical_crossentropy
+    from keras.callbacks import EarlyStopping
+
     batch_size = 32
     num_classes = 2
     epochs = 50
@@ -94,8 +88,8 @@ def TrainAndPlotLoss():
     print(x_test.shape, 'test samples')
 
     # convert class vectors to binary class matrices
-    y_train = keras.utils.to_categorical(y_train, num_classes)
-    y_test = keras.utils.to_categorical(y_test, num_classes)
+    y_train = to_categorical(y_train, num_classes)
+    y_test = to_categorical(y_test, num_classes)
     print("Categories: [falling, rising]")
 
     model = Sequential()
@@ -122,19 +116,18 @@ def TrainAndPlotLoss():
     model.add(Activation('softmax'))
 
     # initiate RMSprop optimizer
-    opt = keras.optimizers.rmsprop(lr=0.0001, decay=1e-6)
+    opt = rmsprop(lr=0.0001, decay=1e-6)
 
-    model.compile(loss=keras.losses.categorical_crossentropy,
+    model.compile(loss=categorical_crossentropy,
                   optimizer=opt,
                   metrics=['accuracy'])
-    stopCallback = keras.callbacks.EarlyStopping(monitor='val_acc', min_delta=0.01, patience=6, verbose=1, mode='auto',
+    stopCallback = EarlyStopping(monitor='val_acc', min_delta=0.01, patience=6, verbose=1, mode='auto',
                                                  baseline=None)
 
-    batchPlotCallback = BatchPlotter()
     history = model.fit(x_train, y_train,
                         batch_size=batch_size,
                         epochs=epochs,
-                        callbacks=[batchPlotCallback, stopCallback],
+                        callbacks=[stopCallback],
                         verbose=1,
                         validation_data=(x_test, y_test))
 
@@ -160,6 +153,8 @@ def TrainAndPlotLoss():
 
 
 def EvaluateOneFile(wavFileName='resources/f2cnn/TRAIN/DR3.FCKE0.SI1111.WAV'):
+    from keras.models import  load_model
+
     print("File:\t\t{}".format(wavFileName))
     # #### READING CONFIG FILE
     config = ConfigParser()
@@ -192,7 +187,7 @@ def EvaluateOneFile(wavFileName='resources/f2cnn/TRAIN/DR3.FCKE0.SI1111.WAV'):
     for i, matrix in enumerate(input_data):
         input_data[i] = normalizeInput(matrix)
     input_data.astype('float32')
-    model = keras.models.load_model('trained_model')
+    model = load_model('trained_model')
     # scores = model.evaluate(input_data, )
     scores = model.predict(input_data.reshape(nb, 11, 128, 1))
     rising = [-100 if neg > pos else 200 for neg, pos in scores]

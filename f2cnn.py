@@ -1,10 +1,10 @@
 import argparse
 
-from scripts.OrganiseFiles import OrganiseAllFiles
-from scripts.GammatoneFiltering import FilterAllOrganisedFiles
-from scripts.EnvelopeExtraction import ExtractAllEnvelopes
-from scripts.LabelDataGenerator import GenerateLabelData
-from scripts.InputGenerator import GenerateInputData
+from scripts.processing.OrganiseFiles import OrganiseAllFiles
+from scripts.processing.GammatoneFiltering import FilterAllOrganisedFiles
+from scripts.processing.EnvelopeExtraction import ExtractAllEnvelopes
+from scripts.processing.LabelDataGenerator import GenerateLabelData
+from scripts.processing.InputGenerator import GenerateInputData
 from scripts.Plotting import PlotEnvelopesAndF2FromFile
 from scripts.CNN.CNN import TrainAndPlotLoss, EvaluateOneFile, EvaluateRandom
 

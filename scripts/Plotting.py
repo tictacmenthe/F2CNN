@@ -10,10 +10,9 @@ import numpy
 from matplotlib.colors import LogNorm
 
 from gammatone.filters import centre_freqs
-from .EnvelopeExtraction import ExtractEnvelopeFromMatrix
-from .FBFileReader import ExtractFBFile
-from .GammatoneFiltering import GetFilteredOutputFromFile
-from .LabelDataGenerator import GetLabelsFromFile
+from scripts.processing.EnvelopeExtraction import ExtractEnvelopeFromMatrix
+from scripts.processing.FBFileReader import ExtractFBFile
+from scripts.processing.GammatoneFiltering import GetFilteredOutputFromFile
 
 
 def ERBScale(f):

@@ -3,19 +3,9 @@
 
 archives/
 testFiles/
-resources/timit/*
-resources/TIMIT/*
-resources/vtr_formants/*
-resources/f2cnn/TEST/*
-resources/f2cnn/TRAIN/*
-!resources/f2cnn/TEST/.gitkeep
-!resources/f2cnn/TRAIN/.gitkeep
+resources/
 .idea
-Pictures/
 .~lock*
-lib64
-pyvenv.cfg
-bin/
 
 
 # Created by https://www.gitignore.io/api/jupyternotebook
