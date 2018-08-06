@@ -16,14 +16,17 @@ import time
 import wave
 from configparser import ConfigParser
 from itertools import product
+from functools import partial
 from multiprocessing.pool import Pool
-from multiprocessing import cpu_count
+from multiprocessing import cpu_count, Value
 from os import remove
 from os.path import splitext, join, split
 from shutil import copyfile
 import numpy
 
 from gammatone import filters
+
+counter = None
 
 
 def GetFilteredOutputFromFile(filename, FILTERBANK_COEFFICIENTS):
@@ -83,7 +86,7 @@ def loadGFBMatrix(filename):
     return numpy.load(filename + '.npy')
 
 
-def GammatoneFiltering(wavFile, FILTERBANK_COEFFICIENTS):
+def GammatoneFiltering(wavFile, n):
     gfbFilename = splitext(wavFile)[0] + '.GFB'
     print("Filtering:\t{}".format(wavFile))
 
@@ -93,7 +96,18 @@ def GammatoneFiltering(wavFile, FILTERBANK_COEFFICIENTS):
     # Save file to .GFB.npy format
     print("Saving:\t\t{}".format(gfbFilename))
     saveGFBMatrix(gfbFilename, outputMatrix)
-    print("\t\t{}\tdone !".format(wavFile))
+
+    global counter
+    with counter.get_lock():
+        counter.value+=1
+    print("\t\t{}\tdone ! {}/{} Files.".format(wavFile, counter.value,n))
+
+
+def InitProcesses(FBCOEFS, cn):
+    global FILTERBANK_COEFFICIENTS
+    global counter
+    counter=cn
+    FILTERBANK_COEFFICIENTS = FBCOEFS
 
 
 def FilterAllOrganisedFiles(testMode):
@@ -128,9 +142,9 @@ def FilterAllOrganisedFiles(testMode):
 
     # Usage of multiprocessing, to reduce computing time
     proc = cpu_count()
-
-    multiproc_pool = Pool(processes=proc)
-    arguments = product(wavFiles, [FILTERBANK_COEFFICIENTS])
+    counter=Value('i', 0)
+    multiproc_pool = Pool(processes=proc, initializer = InitProcesses, initargs=(FILTERBANK_COEFFICIENTS, counter,))
+    arguments=product(wavFiles, [len(wavFiles)])
     multiproc_pool.starmap(GammatoneFiltering, arguments)
 
     print("Filtered and Saved all files.")

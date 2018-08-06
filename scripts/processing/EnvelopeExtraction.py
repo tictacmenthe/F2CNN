@@ -13,7 +13,7 @@ from multiprocessing.pool import Pool
 from os.path import splitext, join, split
 
 import numpy
-from scipy.signal import hilbert
+from scipy.signal import hilbert, lfilter, butter
 
 
 def paddedHilbert(signal):
@@ -35,6 +35,18 @@ def paddedHilbert(signal):
     return result
 
 
+def lowPassFilter(signal, freq):
+    """
+    Applies a butterworth low pass filter to the signal
+    :param signal: the signal that will be filtered
+    :param freq: the cutoff frequency
+    :return: the filtered signal
+    """
+    # The A et B parameter arrays of the filter
+    B, A = butter(1, freq / (16000 / 2), 'low')
+    return lfilter(B, A, signal, axis=0)
+
+
 def ExtractEnvelopeFromMatrix(matrix):
     # Matrix that will be saved
     envelopes = numpy.zeros(matrix.shape)
@@ -44,7 +56,13 @@ def ExtractEnvelopeFromMatrix(matrix):
         # Envelope extraction
         analytic_signal = paddedHilbert(signal)
         amplitude_envelope = numpy.abs(analytic_signal)
-        envelopes[i] = amplitude_envelope
+        if not False:
+            envelopes[i] = amplitude_envelope
+        else:
+            # Low Pass Filter with Butterworth 'CUTOFF' Hz filter
+            filtered_envelope_values = lowPassFilter(amplitude_envelope, 100)
+            # Save the envelope to the right output channel
+            envelopes[i] = filtered_envelope_values
     return envelopes
 
 

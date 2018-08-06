@@ -133,10 +133,7 @@ def TrainAndPlotLoss():
 
     score = model.evaluate(x_test, y_test, verbose=1)
 
-    model.save('trained_model')
-    model.save_weights('trained_model_weights')
-    with open('trained_model_json', 'w') as jsonfile:
-        jsonfile.write(model.to_json())
+    model.save('trained_modelFILTERED')
 
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
@@ -152,7 +149,7 @@ def TrainAndPlotLoss():
     pyplot.show(fig)
 
 
-def EvaluateOneFile(wavFileName='resources/f2cnn/TRAIN/DR3.FCKE0.SI1111.WAV'):
+def EvaluateOneFile(wavFileName='resources/f2cnn/TRAIN/DR3.FCKE0.SI1111.WAV', CENTER_FREQUENCIES=None, FILTERBANK_COEFFICIENTS = None):
     from keras.models import  load_model
 
     print("File:\t\t{}".format(wavFileName))
@@ -160,36 +157,55 @@ def EvaluateOneFile(wavFileName='resources/f2cnn/TRAIN/DR3.FCKE0.SI1111.WAV'):
     config = ConfigParser()
     config.read('F2CNN.conf')
     framerate = config.getint('FILTERBANK', 'FRAMERATE')
-    nchannels = config.getint('FILTERBANK', 'NCHANNELS')
-    lowcutoff = config.getint('FILTERBANK', 'LOW')
-
     ustos=1/1000000.
+    if CENTER_FREQUENCIES is None:
+        nchannels = config.getint('FILTERBANK', 'NCHANNELS')
+        lowcutoff = config.getint('FILTERBANK', 'LOW')
+        CENTER_FREQUENCIES = filters.centre_freqs(framerate, nchannels, lowcutoff)
+        FILTERBANK_COEFFICIENTS = filters.make_erb_filters(framerate, CENTER_FREQUENCIES)
     # ##### PREPARATION OF FILTERBANK
     # CENTER FREQUENCIES ON ERB SCALE
-    CENTER_FREQUENCIES = filters.centre_freqs(framerate, nchannels, lowcutoff)
     # Filter coefficient for a Gammatone filterbank
-    FILTERBANK_COEFFICIENTS = filters.make_erb_filters(framerate, CENTER_FREQUENCIES)
-
+    print("Applying filterbank...")
     filtered, framerate = GetFilteredOutputFromFile(wavFileName, FILTERBANK_COEFFICIENTS)
+
+    print("Extracting Envelope...")
+    envelopes = ExtractEnvelopeFromMatrix(filtered)
+    del filtered
+
+    print("Extracting Formants...")
     fbPath = os.path.splitext(wavFileName)[0] + '.FB'
-    phnPath = os.path.splitext(wavFileName)[0] + '.PHN'
     formants, sampPeriod = ExtractFBFile(fbPath)
-    envelope = ExtractEnvelopeFromMatrix(filtered)
+
+    print("Extracting Phonemes...")
+    phnPath = os.path.splitext(wavFileName)[0] + '.PHN'
     phonemes = ExtractPhonemes(phnPath)
-    nb = int(len(envelope[0]) - 0.11*framerate)
+
+    print("Generating input data for CNN...")
+    nb = int(len(envelopes[0]) - 0.11*framerate)
     input_data = numpy.zeros([nb, 11, 128])
     print("INPUT SHAPE:",input_data.shape)
     START = int(0.055 * framerate)
     STEP = int(framerate*sampPeriod*ustos)
     for i in range(0, nb):
-        input_data[i] = [[channel[START + i + (k - 5) * STEP] for channel in envelope] for k in range(11)]
+        input_data[i] = [[channel[START + i + (k - 5) * STEP] for channel in envelopes] for k in range(11)]
     for i, matrix in enumerate(input_data):
         input_data[i] = normalizeInput(matrix)
     input_data.astype('float32')
-    model = load_model('trained_model')
-    # scores = model.evaluate(input_data, )
-    scores = model.predict(input_data.reshape(nb, 11, 128, 1))
-    PlotEnvelopesAndCNNResultsWithPhonemes(envelope, scores, CENTER_FREQUENCIES, phonemes, formants, sampPeriod, wavFileName)
+
+    print("Evaluating the data with the pretrained model...")
+    model = load_model('trained_modelFILTERED')
+    scores = model.predict(input_data.reshape(nb, 11, 128, 1), verbose=1)
+    del model
+    del input_data
+
+    print("Plotting...")
+    PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES, phonemes, formants, sampPeriod, wavFileName)
+
+    del envelopes
+    del phonemes
+    from keras.backend  import clear_session
+    clear_session()
     print("\t\t{}\tdone !".format(wavFileName))
 
 
@@ -212,9 +228,20 @@ def EvaluateRandom(testMode=False):
     if not wavFiles:
         print("NO WAV FILES FOUND")
         exit(-1)
+
+    # Reading the config file
+    config = ConfigParser()
+    config.read('F2CNN.conf')
+    framerate = config.getint('FILTERBANK', 'FRAMERATE')
+    nchannels = config.getint('FILTERBANK', 'NCHANNELS')
+    lowcutoff = config.getint('FILTERBANK', 'LOW')
+    # CENTER FREQUENCIES ON ERB SCALE
+    CENTER_FREQUENCIES = filters.centre_freqs(framerate, nchannels, lowcutoff)
+    FILTERBANK_COEFFICIENTS = filters.make_erb_filters(framerate, CENTER_FREQUENCIES)
+
     numpy.random.shuffle(wavFiles)
     for file in wavFiles:
-        EvaluateOneFile(file)
+        EvaluateOneFile(file, CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS)
 
     print("Evaluating network on all files.")
     print('              Total time:', time.time() - TotalTime)

@@ -19,7 +19,7 @@ from os import listdir, makedirs, mkdir
 from os.path import isfile, splitext, dirname, exists, join, split, isdir
 from shutil import copyfile
 
-import glob2
+import glob
 
 def completeSplit(filename):
     # Splitting filename
@@ -84,8 +84,18 @@ def moveFilesToPosition(vtrFileNames, timitFileNames):
 def OrganiseAllFiles(_):
     print("\n###############################\nReorganising files, like explained in the OrganiseFiles.py file's documentation.")
     TotalTime = time.time()
-    vtrFileNames = list(map(lambda s:completeSplit(splitext(s)[0])[2:],glob2.glob(join("resources","VTR","**","*.FB"))))
-    timitFileNames = list(map(lambda s:completeSplit(splitext(s)[0])[2:],glob2.glob(join("resources","TIMIT","**","*.WAV"))))
+    vtrFileNames = list(map(lambda s:completeSplit(splitext(s)[0])[2:],glob.glob(join("resources","**","*.fb"),recursive=True)))
+    timitFileNames = list(map(lambda s:completeSplit(splitext(s)[0])[2:],glob.glob(join("resources","**","*.WAV"), recursive=True)))
+    if not vtrFileNames:
+        vtrFileNames = list(map(lambda s: completeSplit(splitext(s)[0])[2:],
+                                glob.glob(join("resources", "**", "*.FB"), recursive=True)))
+        if not vtrFileNames:
+            print("NO VTR FILES FOUND")
+            exit(-1)
+    if not timitFileNames:
+        print("NO TIMIT FILES FOUND")
+        exit(-1)
+
     print("FOUND",len(vtrFileNames), "VTR FB FILES TO ORGANIZE.")
     print("FOUND",len(timitFileNames), "TIMIT WAV FILES.")
     if not isdir(join('resources')):
@@ -96,8 +106,15 @@ def OrganiseAllFiles(_):
         mkdir(join('resources', 'f2cnn', 'TEST'))
         mkdir(join('resources', 'f2cnn', 'TRAIN'))
 
+    if not isdir(join('resources', 'f2cnn', 'TRAIN')):
+        mkdir(join('resources', 'f2cnn', 'TRAIN'))
+    if not isdir(join('resources', 'f2cnn', 'TEST')):
+        mkdir(join('resources', 'f2cnn', 'TEST'))
+
+
 
     moveFilesToPosition(vtrFileNames, timitFileNames)
+
     print("Done reorganizing files.")
     print('                Total time:', time.time() - TotalTime)
     print('')
