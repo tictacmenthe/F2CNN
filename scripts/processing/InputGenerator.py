@@ -1,8 +1,13 @@
 import csv
+import glob
 import time
+from configparser import ConfigParser
 from os.path import join, isdir
 
 import numpy
+from matplotlib.colors import LogNorm
+
+from scripts.processing.OrganiseFiles import completeSplit
 
 
 def GetListOfEnvelopeFilesAndTimepoints(labelFilename):
@@ -14,77 +19,74 @@ def GetListOfEnvelopeFilesAndTimepoints(labelFilename):
     output = dict()
     with open(labelFilename, 'r') as labelFile:
         csvLabelReader = csv.reader(labelFile)
-        for i, (testOrTrain, region, speaker, sentence, phoneme, timepoint, slope, pvalue, sign) in enumerate(csvLabelReader):
+        for i, (testOrTrain, region, speaker, sentence, phoneme, timepoint, slope, pvalue, sign) in enumerate(
+                csvLabelReader):
             file = join(testOrTrain, '.'.join((region, speaker, sentence, 'ENV1.npy')))
             if file not in output.keys():
-                output[file]=[timepoint]
+                output[file] = [int(timepoint)]
             else:
-                output[file].append(timepoint)
+                output[file].append(int(timepoint))
     return output
 
 
-def GenerateInputData(testMode):
-    STEP = 160
-    START = 5 * STEP
+def GenerateInputData(LPF=False, CUTOFF=100):
     TotalTime = time.time()
 
-    if testMode:
-        # Test files trainingData directory
-        if not isdir(join("testFiles", "trainingData")):
-            print("LABEL GENERATION SHOULD BE DONE PRIOR TO INPUT...")
-            exit(-1)
-        csvFilename = join("testFiles", "trainingData", "label_data.csv")
-    else:
-        # The csv label data is inside regular trainingData directory
-        if not isdir(join("trainingData")):
-            print("LABEL GENERATION SHOULD BE DONE PRIOR TO INPUT...")
-            exit(-1)
-        csvFilename = join("trainingData", "label_data.csv")
+    # The csv label data is inside regular trainingData directory
+    if not isdir(join("trainingData")):
+        print("LABEL GENERATION SHOULD BE DONE PRIOR TO INPUT...")
+        exit(-1)
+    csvFilename = join("trainingData", "label_data.csv")
 
     filesAndTimepointsDict = GetListOfEnvelopeFilesAndTimepoints(csvFilename)
 
     print("\n###############################\nGenerating Input Data from files with '{}'.".format(csvFilename))
+    if LPF:
+        print("Using Low Pass Filtering with a cutoff at {}Hz".format(CUTOFF))
+    else:
+        print("Not using Low Pass Filtering")
 
     if not filesAndTimepointsDict:
         print("NO ENV1.npy FILES FOUND")
         exit(-1)
+    files=filesAndTimepointsDict.keys()
+    files=sorted(files)
+    totalTimePoints = sum([len(data) for data in filesAndTimepointsDict.values()])
+    print(len(filesAndTimepointsDict.keys()), "files found along with their",
+          totalTimePoints, "entry timepoints.")
+    # #### READING CONFIG FILE
+    config = ConfigParser()
+    config.read('F2CNN.conf')
+    radius = config.getint('CNN', 'RADIUS')
+    sampPeriod = config.getint('CNN', 'sampperiod')
+    framerate = config.getint('FILTERBANK', 'framerate')
+    nchannels = config.getint('FILTERBANK', 'nchannels')
+    dotsperinput = radius * 2 + 1
 
-    print(len(envFilesAndTimepoints), "files found along with their",
-          sum([len(data[1]) for data in envFilesAndTimepoints]), "entry timepoints.")
-
-    inputData = []
-    for i, (file, timepoints) in enumerate(envFilesAndTimepoints):
-        if testMode:
-            file = join('testFiles', file[1])
-        else:
-            file = join('resources', 'f2cnn', file[0], file[1])
-        print(i, "Reading:\t{}".format(file))
+    inputData = numpy.zeros((totalTimePoints, dotsperinput, nchannels))
+    print("Output shape:", inputData.shape)
+    STEP = int(framerate*sampPeriod/1000000)
+    currentEntry = 0
+    for currentFileIndex, file in enumerate(files):
+        timepoints=filesAndTimepointsDict[file]
+        file = join('resources', 'f2cnn', file)
+        print("Reading:\t\t{}".format(file))
         envelopes = numpy.load(file)
-
-        # Discretisation of the values for each entry required
-        currentStep = START
-        steps = []
-        for t, timepoint in enumerate(timepoints):
-            entry = [timepoint + (k - 5) * STEP for k in range(11)]
-            currentStep += STEP
-            steps.append(entry)
-            # print(t, entry)
-
-        for entry in steps:
-            entryMatrix = []  # All the values for one entry
-            for index in entry:
-                valueArray = [channel[index] for channel in envelopes]  # All the values of env at the steps' timepoint
-                entryMatrix.append(valueArray)
-            inputData.append(entryMatrix)
-        print("\t\t{}\tdone !".format(file))
-
+        i=0
+        for i, center in enumerate(timepoints):
+            entryMatrix = numpy.zeros((dotsperinput,nchannels))  # All the values for one entry(11 timepoints centered around center) : 11x128 matrix
+            for j, index in enumerate([center + STEP * (k - 5) for k in range(dotsperinput)]):
+                valueArray = numpy.array([channel[index] for channel in envelopes])  # All the values of env at the steps' timepoint
+                entryMatrix[j]=valueArray
+            inputData[currentEntry+i]=entryMatrix
+        currentEntry+=i+1
+        print("\t\t{:<50} done !  {}/{} Files".format(file,currentFileIndex+1, len(filesAndTimepointsDict.keys())))
     inputData = numpy.array(inputData, dtype=numpy.float32)
     print('Generated Input Matrix of shape {}.'.format(inputData.shape))
 
-    if testMode:
-        savePath = join('testFiles', 'trainingData', 'input_data')
-    else:
-        savePath = join('trainingData','input_data')
+    savePath = 'trainingData/input_data_LPF{}.npy'.format(CUTOFF) if LPF else 'trainingData/input_data.npy'
+
+    print("Saving {}...".format(savePath))
     numpy.save(savePath, inputData)
     print('                Total time:', time.time() - TotalTime)
     print('')

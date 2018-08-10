@@ -14,23 +14,28 @@ root/
 -other directories/
 
 """
+import glob
 import time
-from os import listdir, makedirs, mkdir
-from os.path import isfile, splitext, dirname, exists, join, split, isdir
+from os import mkdir
+from os.path import splitext, join, split, isdir
 from shutil import copyfile
 
-import glob
 
 def completeSplit(filename):
+    """
+    Splits the path to a file
+    :param filename: path to the file
+    :return:    list of splitted filepath
+    """
     # Splitting filename
     splitted = []
     while True:
         file = split(filename)
-        if file[0] in ('..', '.', '/'):
+        if file[0] in ('..', '.', '/'):     # If we are at the end of a filepath:parent dir, current dir, root dir
             splitted.append(file[1])
             splitted.append(file[0])
             break
-        elif file[0] == '':
+        elif file[0] == '':                 # If we were already at the end of the filepath
             splitted.append(file[1])
             break
         splitted.append(file[1])
@@ -40,9 +45,12 @@ def completeSplit(filename):
 
 
 def moveFilesToPosition(vtrFileNames, timitFileNames):
+    """
+    Moves all files to their correct position in ./resources/f2cnn
+    :param vtrFileNames: paths to all vtr .FB files
+    :param timitFileNames: paths to all Timit .WAV files
+    """
     # Get the WAV files from timit
-    source=[]
-    dest=[]
     count=0
     for timitFile in timitFileNames:
         for vtrFile in vtrFileNames:
@@ -74,11 +82,7 @@ def moveFilesToPosition(vtrFileNames, timitFileNames):
                 print("TO\t\t\t", dst + ".FB")
                 copyfile(fbsrc+".fb", dst+".FB")
                 count+=1
-
-
-
     print(count)
-
 
 
 def OrganiseAllFiles(_):
@@ -110,8 +114,6 @@ def OrganiseAllFiles(_):
         mkdir(join('resources', 'f2cnn', 'TRAIN'))
     if not isdir(join('resources', 'f2cnn', 'TEST')):
         mkdir(join('resources', 'f2cnn', 'TEST'))
-
-
 
     moveFilesToPosition(vtrFileNames, timitFileNames)
 

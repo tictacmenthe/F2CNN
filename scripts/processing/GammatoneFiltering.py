@@ -16,12 +16,12 @@ import time
 import wave
 from configparser import ConfigParser
 from itertools import product
-from functools import partial
-from multiprocessing.pool import Pool
 from multiprocessing import cpu_count, Value
+from multiprocessing.pool import Pool
 from os import remove
 from os.path import splitext, join, split
 from shutil import copyfile
+
 import numpy
 
 from gammatone import filters
@@ -67,7 +67,9 @@ def GetFilteredOutputFromArray(array, FILTERBANK_COEFFICIENTS):
 
 def ConvertWavFile(filename):
     """
-    Some WAV files seem to miss some features needed by the wave library (RIFF ID), this counters that
+    The files in the TIMIT database were created using Sphere, and are not valid WAV files for wave library.
+    Some of these WAV files seem to miss some features needed by the wave library (RIFF ID), this counters that with a
+    small hack that reconverts to a correct wav file with ffmpeg
     :param filename: path to the WAV file
     """
     newname = splitext(filename)[0] + '.mp3'
@@ -100,7 +102,7 @@ def GammatoneFiltering(wavFile, n):
     global counter
     with counter.get_lock():
         counter.value+=1
-    print("\t\t{}\tdone ! {}/{} Files.".format(wavFile, counter.value,n))
+        print("\t\t{:<50} done ! {}/{} Files.".format(wavFile, counter.value,n))
 
 
 def InitProcesses(FBCOEFS, cn):

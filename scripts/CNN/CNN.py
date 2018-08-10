@@ -7,7 +7,6 @@ import time
 from configparser import ConfigParser
 import numpy
 
-
 from matplotlib import pyplot
 
 from gammatone import filters
@@ -15,7 +14,7 @@ from scripts.processing.EnvelopeExtraction import ExtractEnvelopeFromMatrix
 from scripts.processing.FBFileReader import ExtractFBFile
 from scripts.processing.GammatoneFiltering import GetFilteredOutputFromFile
 from scripts.processing.PHNFileReader import ExtractPhonemes
-from scripts.Plotting import PlotEnvelopesAndCNNResultsWithPhonemes
+from scripts.plotting.PlottingCNN import PlotEnvelopesAndCNNResultsWithPhonemes
 
 numpy.set_printoptions(threshold=numpy.inf)
 
@@ -25,6 +24,7 @@ def normalizeInput(matrix: numpy.ndarray):
     if minvalue > maxvalue:
         raise ValueError("minvalue must be less than or equal to maxvalue")
     elif minvalue <= 0:
+        print(matrix.shape)
         raise ValueError("values must all be positive")
     elif minvalue == maxvalue:
         matrix.fill(0)
@@ -41,16 +41,21 @@ def SeparateTestTrain(pathToInput, pathToLabel):
     x = [[], []]
     y = [[], []]
     input_data = numpy.load(pathToInput)
+    print(input_data.shape)
+
     with open(pathToLabel, 'r') as labels:
         reader = csv.reader(labels)
         for i, (test, region, speaker, sentence, phoneme, timepoint, slope, pvalue, sign) in enumerate(reader):
-            test=test=='TEST'
-            x[0 if test else 1].append(input_data[i])
-            y[0 if test else 1].append(int(sign))
+            if test == 'TEST':
+                x[0].append(input_data[i])
+                y[0].append(int(sign))
+            else:
+                x[1].append(input_data[i])
+                y[1].append(int(sign))
     return numpy.array(x[0]), numpy.array(y[0]), numpy.array(x[1]), numpy.array(y[1])
 
 
-def TrainAndPlotLoss():
+def TrainAndPlotLoss(inputFile, outputFile):
     from keras.layers import Conv2D, MaxPooling2D, Activation
     from keras.layers import Dense, Dropout, Flatten
     from keras.models import Sequential
@@ -58,15 +63,20 @@ def TrainAndPlotLoss():
     from keras.optimizers import rmsprop
     from keras.losses import categorical_crossentropy
     from keras.callbacks import EarlyStopping
-
+    savePath=inputFile.split('_')
+    if savePath[-1][:3] == 'LPF':
+        print(inputFile.split('_')[-1][3:].split('.')[0])
+    exit()
     batch_size = 32
     num_classes = 2
     epochs = 50
     # input image dimensions
     img_rows, img_cols = 11, 128
 
-    x_test, y_test, x_train, y_train = SeparateTestTrain('trainingData/input_data.npy',
-                                                         'trainingData/label_data.csv')
+    inputPath = inputFile
+    labelPath = 'trainingData/label_data.csv'
+
+    x_test, y_test, x_train, y_train = SeparateTestTrain(inputPath, labelPath)
 
     x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
     x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
@@ -121,8 +131,8 @@ def TrainAndPlotLoss():
     model.compile(loss=categorical_crossentropy,
                   optimizer=opt,
                   metrics=['accuracy'])
-    stopCallback = EarlyStopping(monitor='val_acc', min_delta=0.01, patience=6, verbose=1, mode='auto',
-                                                 baseline=None)
+    stopCallback = EarlyStopping(monitor='val_acc', min_delta=0.01, patience=10, verbose=1, mode='auto',
+                                 baseline=None)
 
     history = model.fit(x_train, y_train,
                         batch_size=batch_size,
@@ -133,7 +143,9 @@ def TrainAndPlotLoss():
 
     score = model.evaluate(x_test, y_test, verbose=1)
 
-    model.save('trained_modelFILTERED')
+    savePath=inputFile.split('_.npy')
+    print(savePath)
+    model.save('trained_model_LP')
 
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
@@ -144,20 +156,23 @@ def TrainAndPlotLoss():
     val_loss.plot(history.history['val_loss'], label='Validation Loss')
     val_acc.set_xlabel("Epoch")
     val_acc.set_ylabel("Validation Accuracy")
-    val_loss.set_ylabel("Validation Accuracy")
-    pyplot.legend()
+    val_loss.set_ylabel("Validation Loss")
+    val_acc.legend()
+    val_loss.legend()
     pyplot.show(fig)
 
 
-def EvaluateOneFile(wavFileName='resources/f2cnn/TRAIN/DR3.FCKE0.SI1111.WAV', CENTER_FREQUENCIES=None, FILTERBANK_COEFFICIENTS = None):
-    from keras.models import  load_model
+def EvaluateOneFile(wavFileName, LPF=False, CUTOFF=100,
+                    CENTER_FREQUENCIES=None,
+                    FILTERBANK_COEFFICIENTS=None):
+    from keras.models import load_model
 
     print("File:\t\t{}".format(wavFileName))
     # #### READING CONFIG FILE
     config = ConfigParser()
     config.read('F2CNN.conf')
     framerate = config.getint('FILTERBANK', 'FRAMERATE')
-    ustos=1/1000000.
+    ustos = 1 / 1000000.
     if CENTER_FREQUENCIES is None:
         nchannels = config.getint('FILTERBANK', 'NCHANNELS')
         lowcutoff = config.getint('FILTERBANK', 'LOW')
@@ -182,11 +197,11 @@ def EvaluateOneFile(wavFileName='resources/f2cnn/TRAIN/DR3.FCKE0.SI1111.WAV', CE
     phonemes = ExtractPhonemes(phnPath)
 
     print("Generating input data for CNN...")
-    nb = int(len(envelopes[0]) - 0.11*framerate)
+    nb = int(len(envelopes[0]) - 0.11 * framerate)
     input_data = numpy.zeros([nb, 11, 128])
-    print("INPUT SHAPE:",input_data.shape)
+    print("INPUT SHAPE:", input_data.shape)
     START = int(0.055 * framerate)
-    STEP = int(framerate*sampPeriod*ustos)
+    STEP = int(framerate * sampPeriod * ustos)
     for i in range(0, nb):
         input_data[i] = [[channel[START + i + (k - 5) * STEP] for channel in envelopes] for k in range(11)]
     for i, matrix in enumerate(input_data):
@@ -194,17 +209,18 @@ def EvaluateOneFile(wavFileName='resources/f2cnn/TRAIN/DR3.FCKE0.SI1111.WAV', CE
     input_data.astype('float32')
 
     print("Evaluating the data with the pretrained model...")
-    model = load_model('trained_modelFILTERED')
+    print(LPF, CUTOFF)
+    model = load_model('trained_model_LPF{}'.format(CUTOFF) if LPF else 'trained_model')
     scores = model.predict(input_data.reshape(nb, 11, 128, 1), verbose=1)
     del model
     del input_data
 
     print("Plotting...")
-    PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES, phonemes, formants, sampPeriod, wavFileName)
+    PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES, phonemes, formants, wavFileName)
 
     del envelopes
     del phonemes
-    from keras.backend  import clear_session
+    from keras.backend import clear_session
     clear_session()
     print("\t\t{}\tdone !".format(wavFileName))
 
@@ -216,14 +232,16 @@ def EvaluateRandom(testMode=False):
 
     if not os.path.isdir("graphs"):
         os.mkdir('graphs')
-        os.mkdir(os.path.join('graphs','FallingOrRising'))
+        os.mkdir(os.path.join('graphs', 'FallingOrRising'))
     if testMode:
         # # Test Files
         wavFiles = glob.glob(os.path.join('testFiles', '*.WAV'))
     else:
         # Get all the WAV files under resources/fcnn
         wavFiles = glob.glob(os.path.join('resources', 'f2cnn', '*', '*.WAV'))
-    print("\n###############################\nEvaluating network on WAV {} files in '{}'.".format(len(wavFiles),os.path.split(wavFiles[0])[0]))
+    print("\n###############################\nEvaluating network on WAV {} files in '{}'.".format(len(wavFiles),
+                                                                                                  os.path.split(
+                                                                                                      wavFiles[0])[0]))
 
     if not wavFiles:
         print("NO WAV FILES FOUND")

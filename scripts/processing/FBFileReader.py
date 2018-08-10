@@ -76,14 +76,14 @@ def GetF2FrequenciesAround(array, timepoint, radius):
     :return: array of radius*2 + 1 frequencies
     """
     start, end = timepoint / 160 - radius, timepoint / 160 + radius
+    start, end = int(start), int(end) + 1
     if start < 0 or end >= len(array):
-        print("ERROR: WRONG RANGE IN GETF2FREQUENCIESAROUND IN ARRAY:\n", array, "\nAT TIME AND RADIUS", timepoint,
-              radius)
+        print("ERROR: WRONG RANGE IN GETF2FREQUENCIESAROUND IN ARRAY OF LEN:\n", len(array), "\nAT TIME AND RADIUS", timepoint,
+              radius, start, end)
         if start<0:
             print("INF")
         elif end>=len(array):
             print("SUP")
         print(len(array))
         exit(-1)
-    start, end = int(start), int(end) + 1
     return array[start:end]

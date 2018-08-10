@@ -16,6 +16,8 @@ from os import mkdir
 from scipy.stats import pearsonr
 from os.path import join, split, splitext, isdir
 
+from scripts.processing.GammatoneFiltering import ConvertWavFile
+from scripts.processing.OrganiseFiles import completeSplit
 from .FBFileReader import GetF2Frequencies, GetF2FrequenciesAround
 from .PHNFileReader import GetPhonemeAt, SILENTS
 
@@ -35,10 +37,10 @@ def GenerateLabelData(testMode):
     config.read('F2CNN.conf')
     radius = config.getint('CNN', 'RADIUS')
     RISK = config.getfloat('CNN', 'RISK')
-    sampPeriod = config.getint('CNN', 'sampperiod') / 1000000
+    sampPeriod = config.getint('CNN', 'sampperiod')
     framerate = config.getint('FILTERBANK', 'framerate')
     dotsperinput = radius * 2 + 1
-
+    ustos=1.0/1000000
     if testMode:
         # Test files
         filenames = glob.glob(join("testFiles", "*.WAV"))
@@ -68,9 +70,15 @@ def GenerateLabelData(testMode):
         F2Array, _ = GetF2Frequencies(splitext(file)[0] + '.FB')
 
         # Get number of points
-        wavFile = wave.open(file, 'r')
+        try:
+            wavFile = wave.open(file, 'r')
+        except wave.Error:
+            print("Converting file to correct format...")
+            ConvertWavFile(file)
+            wavFile = wave.open(file, 'r')
         framerate = wavFile.getframerate()
-        nb = int((wavFile.getnframes() / framerate - dotsperinput * sampPeriod) * 100)
+        nf=wavFile.getnframes()
+        nb = int(nf/(framerate*sampPeriod*ustos)-dotsperinput-1)
         wavFile.close()
 
         # Get the information about the person
@@ -78,33 +86,24 @@ def GenerateLabelData(testMode):
         testOrTrain = split(split(file)[0])[1]
 
         # Discretization of the values for each entry required
-        STEP = int(framerate * sampPeriod)
-        START = int(STEP * (radius + 0.5))  # add a 0.5 dot margin, to prevent marginal cases
-        currentStep = START
-        steps = []
-        for t in range(nb):
-            entry = [currentStep + (k - radius) * STEP for k in range(dotsperinput)]
-            currentStep += STEP
-            steps.append(entry)
-
+        STEP = int(framerate * sampPeriod*ustos)
+        START = int(STEP * radius)
+        steps = [START+k*STEP for k in range(nb)]
         for step in steps:
-            phoneme = GetPhonemeAt(splitext(file)[0] + '.PHN', step[radius])
+            phoneme = GetPhonemeAt(splitext(file)[0] + '.PHN', step)
             if phoneme in SILENTS:
                 continue
             if not phoneme:
                 break
-            entry = [testOrTrain, region, speaker, sentence, phoneme, step[radius]]
-            F2Values = numpy.array(GetF2FrequenciesAround(F2Array, step[radius], radius))
+            entry = [testOrTrain, region, speaker, sentence, phoneme, step]
+            F2Values = numpy.array(GetF2FrequenciesAround(F2Array, step, radius))
 
             # Least Squares Method for linear regression of the F2 values
-            x = numpy.array(step)
+            x = numpy.array([step+(k-5)*STEP for k in range(dotsperinput)])
             A = numpy.vstack([x, numpy.ones(len(x))]).T
             [a, b], _, _, _ = numpy.linalg.lstsq(A, F2Values, rcond=None)
-            print(A.shape, F2Values.shape)
-            exit()
             # Pearson Correlation Coefficient r and p-value p using scipy.stats.pearsonr
             r, p = pearsonr(F2Values, a * x + b)
-
             # We round them up at 5 digits after the comma
             entry.append(round(a, 5))
             entry.append(round(p, 5))
@@ -113,7 +112,7 @@ def GenerateLabelData(testMode):
                 vowelCounter += 1
                 entry.append(1 if a > 0 else 0)
                 csvLines.append(entry)
-        print("\t\t{}\tdone !".format(file))
+        print("\t\t{:<50} done !".format(file))
 
     # Saving into a file
     if testMode:
@@ -122,7 +121,6 @@ def GenerateLabelData(testMode):
         filePath = join("testFiles", "trainingData", "label_data.csv")
     else:
         filePath = join("trainingData", "label_data.csv")
-
     with open(filePath, "w") as outputFile:
         writer = csv.writer(outputFile)
         for line in csvLines:
@@ -130,3 +128,10 @@ def GenerateLabelData(testMode):
     print("Generated Label Data CSV of", vowelCounter, "lines.")
     print('                Total time:', time.time() - TotalTime)
     print('')
+
+"""
+
+TRAIN/DR3.MDTB0.SX210.ENV1.npy
+TRAIN/DR4.MTRC0.SI1623.ENV1.npy
+
+"""

@@ -36,4 +36,4 @@ def GetPhonemeAt(phnFilename, timepoint):
     for line in data:
         if line[1] <= timepoint <= line[2]:
             return line[0]
-    return None
+    return 'h#'
