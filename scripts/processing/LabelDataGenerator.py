@@ -29,7 +29,7 @@ def GetLabelsFromFile(filename):
     print(testOrTrain, region, speaker, sentence)
 
 
-def GenerateLabelData(testMode):
+def GenerateLabelData():
     TotalTime = time.time()
 
     # #### READING CONFIG FILE
@@ -38,15 +38,11 @@ def GenerateLabelData(testMode):
     radius = config.getint('CNN', 'RADIUS')
     RISK = config.getfloat('CNN', 'RISK')
     sampPeriod = config.getint('CNN', 'sampperiod')
-    framerate = config.getint('FILTERBANK', 'framerate')
     dotsperinput = radius * 2 + 1
     ustos=1.0/1000000
-    if testMode:
-        # Test files
-        filenames = glob.glob(join("testFiles", "*.WAV"))
-    else:
-        # Get all the files under resources
-        filenames = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))
+
+    # Get all the files under resources
+    filenames = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))
 
     print("\n###############################\nGenerating Label Data from files in '{}'.".format(
         split(split(filenames[0])[0])[0]))

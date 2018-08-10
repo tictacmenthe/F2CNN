@@ -15,7 +15,7 @@ import subprocess
 import time
 import wave
 from configparser import ConfigParser
-from itertools import product
+from itertools import product, repeat
 from multiprocessing import cpu_count, Value
 from multiprocessing.pool import Pool
 from os import remove
@@ -23,6 +23,7 @@ from os.path import splitext, join, split
 from shutil import copyfile
 
 import numpy
+from matplotlib.colors import LogNorm
 
 from gammatone import filters
 
@@ -38,6 +39,7 @@ def GetFilteredOutputFromFile(filename, FILTERBANK_COEFFICIENTS):
     """
     # .WAV file to list
     try:
+        print(filename)
         wavFile = wave.open(filename, 'r')
     except wave.Error:
         print("Converting file to correct format...")
@@ -96,7 +98,7 @@ def GammatoneFiltering(wavFile, n):
     outputMatrix, _ = GetFilteredOutputFromFile(wavFile, FILTERBANK_COEFFICIENTS)
 
     # Save file to .GFB.npy format
-    print("Saving:\t\t{}".format(gfbFilename))
+    print("Saving:\t\t{}.npy".format(gfbFilename))
     saveGFBMatrix(gfbFilename, outputMatrix)
 
     global counter
@@ -112,15 +114,11 @@ def InitProcesses(FBCOEFS, cn):
     FILTERBANK_COEFFICIENTS = FBCOEFS
 
 
-def FilterAllOrganisedFiles(testMode):
+def FilterAllOrganisedFiles():
     TotalTime = time.time()
 
-    if testMode:
-        # Test WavFiles
-        wavFiles = glob.glob(join("testFiles", "*.WAV"))
-    else:
-        # Get all the WAV files under resources
-        wavFiles = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))
+    # Get all the WAV files under resources
+    wavFiles = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))
 
     print("\n###############################\nApplying FilterBank to files in '{}'.".format(split(wavFiles[0])[0]))
 
@@ -144,10 +142,9 @@ def FilterAllOrganisedFiles(testMode):
 
     # Usage of multiprocessing, to reduce computing time
     proc = cpu_count()
-    counter=Value('i', 0)
+    counter = Value('i', 0)
     multiproc_pool = Pool(processes=proc, initializer = InitProcesses, initargs=(FILTERBANK_COEFFICIENTS, counter,))
-    arguments=product(wavFiles, [len(wavFiles)])
-    multiproc_pool.starmap(GammatoneFiltering, arguments)
+    multiproc_pool.starmap(GammatoneFiltering, zip(wavFiles, repeat(len(wavFiles))))
 
     print("Filtered and Saved all files.")
     print('                Total time:', time.time() - TotalTime)

@@ -73,7 +73,6 @@ def PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES):
 
 
 def PlotEnvelopesAndF2FromFile(filename):
-    starTime = time.time()
     CENTER_FREQUENCIES = centre_freqs(16000, 128, 100)
     FILTERBANK_COEFFICIENTS = make_erb_filters(16000, CENTER_FREQUENCIES)
     matrix, framerate = GetFilteredOutputFromFile(filename, FILTERBANK_COEFFICIENTS)
@@ -92,7 +91,6 @@ def PlotEnvelopesAndF2FromFile(filename):
             plt.plot(t, Formant, label='F{} Frequencies (Hz)'.format(i + 1))
         plt.legend()
         plt.text(t[-1] / 2, -700, "File:" + filename)
-    print('compute time:', time.time() - starTime)
     title = "'Spectrogram' like representation of envelopes, and formants"
     plt.title(title)
     plt.show()

@@ -1,18 +1,5 @@
 """
-
  This file defines functions that allow to reorganise TIMIT and VTR_FORMANT files
-
-Required structure:
-root/
--scripts/   -> This file's directory
--resources/
---f2cnn/    -> The output directory
----TRAIN/
----TEST/
---TIMIT/    -> TIMIT database as is, including TEST and TRAIN directories
---VTR/      -> VTR FORMANTS files as is, including TEST and TRAIN subdirectories
--other directories/
-
 """
 import glob
 import time
@@ -85,7 +72,7 @@ def moveFilesToPosition(vtrFileNames, timitFileNames):
     print(count)
 
 
-def OrganiseAllFiles(_):
+def OrganiseAllFiles():
     print("\n###############################\nReorganising files, like explained in the OrganiseFiles.py file's documentation.")
     TotalTime = time.time()
     vtrFileNames = list(map(lambda s:completeSplit(splitext(s)[0])[2:],glob.glob(join("resources","**","*.fb"),recursive=True)))

@@ -10,17 +10,15 @@ from scripts.plotting.PlottingProcessing import PlotEnvelopesAndF2FromFile
 from scripts.CNN.CNN import TrainAndPlotLoss, EvaluateOneFile, EvaluateRandom
 
 
-def All(testMode):
+def All():
     """
     Does all the treatments required for the training
-    :param testMode:
     """
-    if not testMode:
-        OrganiseAllFiles(testMode)
-    FilterAllOrganisedFiles(testMode)
-    ExtractAllEnvelopes(testMode)
-    GenerateLabelData(testMode)
-    GenerateInputData(testMode)
+    OrganiseAllFiles()
+    FilterAllOrganisedFiles()
+    ExtractAllEnvelopes()
+    GenerateLabelData()
+    GenerateInputData()
 
 
 def main():
@@ -63,38 +61,36 @@ all:\t\tDoes all of the above, can take some time.
                                            formatter_class=argparse.RawTextHelpFormatter)
     parser_prepare.add_argument('--lpf', '-l', action='store', dest='CUTOFF')
     parser_prepare.add_argument('prepare_command', choices=PREPARE_FUNCTIONS.keys(), help=preparationHelpText)
-    parser_prepare.add_argument('--file', '-f', action='store', dest='file', nargs=1)
+    parser_prepare.add_argument('--file', '-f', action='store', dest='file', nargs='?')
 
     # Parser for plotting purposes
     parser_plot = subparsers.add_parser('plot', help='For plotting spectrogram-like figure from .WAV file.')
     parser_plot.add_argument('plot_type', choices=PLOT_FUNCTIONS.keys(),
                              help="gtg: Plots a spectrogram like figure from the output of a GammaTone FilterBank applied\
                                   to the given file, and if a .FB file exists in the dir, also plots the Formants.")
-    parser_plot.add_argument('--file', '-f', action='store', dest='file', nargs=1)
+    parser_plot.add_argument('--file', '-f', action='store', dest='file', nargs='?')
 
     # Parser for the CNN
     parser_cnn = subparsers.add_parser('cnn', help='Commands related to training, testing and using the CNN.',
                                        formatter_class=argparse.RawTextHelpFormatter)
-    parser_cnn.add_argument('--file', '-f', action='store', dest='file', nargs=1)
+    parser_cnn.add_argument('--file', '-f', action='store', dest='file', nargs='?')
     parser_cnn.add_argument('cnn_command', choices=CNN_FUNCTIONS.keys())
 
     # Processes the input arguments
     args = parser.parse_args()
 
-    print(args)
     # Calls to functions according to arguments
     if 'prepare_command' in args:
         if args.prepare_command in ['envelope', 'input']:
             PREPARE_FUNCTIONS[args.prepare_command](False if args.CUTOFF is None else True, args.CUTOFF)
-
         else:
             PREPARE_FUNCTIONS[args.prepare_command]()
     elif 'plot_type' in args:
         if args.file is None:
             print("Please use --file or -f to give input file")
         else:
-            print("Plotting for file {}...".format(args.gfilename))
-            PlotEnvelopesAndF2FromFile(args.gfilename)
+            print("Plotting for file {}...".format(args.file))
+            PlotEnvelopesAndF2FromFile(args.file)
 
     elif 'cnn_command' in args:
         if args.cnn_command == 'eval':
@@ -104,8 +100,6 @@ all:\t\tDoes all of the above, can take some time.
                 print("Please use --lpf or -f command to use")
         elif args.cnn_command == 'train':
             inputFile = args.file or join('trainingData','input_data.npy')
-            print(inputFile)
-            exit()
             CNN_FUNCTIONS[args.cnn_command](inputFile)
         else:
             CNN_FUNCTIONS[args.cnn_command]()

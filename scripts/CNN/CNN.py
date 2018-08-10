@@ -55,7 +55,7 @@ def SeparateTestTrain(pathToInput, pathToLabel):
     return numpy.array(x[0]), numpy.array(y[0]), numpy.array(x[1]), numpy.array(y[1])
 
 
-def TrainAndPlotLoss(inputFile, outputFile):
+def TrainAndPlotLoss(inputFile):
     from keras.layers import Conv2D, MaxPooling2D, Activation
     from keras.layers import Dense, Dropout, Flatten
     from keras.models import Sequential
@@ -63,10 +63,6 @@ def TrainAndPlotLoss(inputFile, outputFile):
     from keras.optimizers import rmsprop
     from keras.losses import categorical_crossentropy
     from keras.callbacks import EarlyStopping
-    savePath=inputFile.split('_')
-    if savePath[-1][:3] == 'LPF':
-        print(inputFile.split('_')[-1][3:].split('.')[0])
-    exit()
     batch_size = 32
     num_classes = 2
     epochs = 50
@@ -143,9 +139,7 @@ def TrainAndPlotLoss(inputFile, outputFile):
 
     score = model.evaluate(x_test, y_test, verbose=1)
 
-    savePath=inputFile.split('_.npy')
-    print(savePath)
-    model.save('trained_model_LP')
+    model.save('trained_model')
 
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
@@ -162,25 +156,24 @@ def TrainAndPlotLoss(inputFile, outputFile):
     pyplot.show(fig)
 
 
-def EvaluateOneFile(wavFileName, LPF=False, CUTOFF=100,
-                    CENTER_FREQUENCIES=None,
-                    FILTERBANK_COEFFICIENTS=None):
+def EvaluateOneFile(wavFileName, modelPath='trained_model',
+                    CENTER_FREQUENCIES=None, FILTERBANK_COEFFICIENTS=None, nchannels=128):
     from keras.models import load_model
 
     print("File:\t\t{}".format(wavFileName))
-    # #### READING CONFIG FILE
     config = ConfigParser()
     config.read('F2CNN.conf')
     framerate = config.getint('FILTERBANK', 'FRAMERATE')
+    radius = config.getint('CNN', 'RADIUS')
+    sampPeriod = config.getint('CNN', 'sampperiod')
     ustos = 1 / 1000000.
+    dotsperinput = 2 * radius + 1
     if CENTER_FREQUENCIES is None:
         nchannels = config.getint('FILTERBANK', 'NCHANNELS')
         lowcutoff = config.getint('FILTERBANK', 'LOW')
         CENTER_FREQUENCIES = filters.centre_freqs(framerate, nchannels, lowcutoff)
         FILTERBANK_COEFFICIENTS = filters.make_erb_filters(framerate, CENTER_FREQUENCIES)
-    # ##### PREPARATION OF FILTERBANK
-    # CENTER FREQUENCIES ON ERB SCALE
-    # Filter coefficient for a Gammatone filterbank
+
     print("Applying filterbank...")
     filtered, framerate = GetFilteredOutputFromFile(wavFileName, FILTERBANK_COEFFICIENTS)
 
@@ -190,28 +183,30 @@ def EvaluateOneFile(wavFileName, LPF=False, CUTOFF=100,
 
     print("Extracting Formants...")
     fbPath = os.path.splitext(wavFileName)[0] + '.FB'
-    formants, sampPeriod = ExtractFBFile(fbPath)
+    formants, _ = ExtractFBFile(fbPath)
 
     print("Extracting Phonemes...")
     phnPath = os.path.splitext(wavFileName)[0] + '.PHN'
     phonemes = ExtractPhonemes(phnPath)
 
     print("Generating input data for CNN...")
-    nb = int(len(envelopes[0]) - 0.11 * framerate)
-    input_data = numpy.zeros([nb, 11, 128])
+    nb = int(len(envelopes[0]) - dotsperinput * sampPeriod * ustos * framerate)
+    input_data = numpy.zeros([nb, dotsperinput, nchannels])
     print("INPUT SHAPE:", input_data.shape)
-    START = int(0.055 * framerate)
+    START = int(dotsperinput * sampPeriod * ustos * framerate / 2)
     STEP = int(framerate * sampPeriod * ustos)
+    # We take a matrix of 11x128 values,
     for i in range(0, nb):
-        input_data[i] = [[channel[START + i + (k - 5) * STEP] for channel in envelopes] for k in range(11)]
+        input_data[i] = [[channel[START + i + (k - radius) * STEP] for channel in envelopes] for k in
+                         range(dotsperinput)]
+    print("Normalization...")
     for i, matrix in enumerate(input_data):
         input_data[i] = normalizeInput(matrix)
     input_data.astype('float32')
 
-    print("Evaluating the data with the pretrained model...")
-    print(LPF, CUTOFF)
-    model = load_model('trained_model_LPF{}'.format(CUTOFF) if LPF else 'trained_model')
-    scores = model.predict(input_data.reshape(nb, 11, 128, 1), verbose=1)
+    print("Evaluating the data with the pretrained model '{}'...".format(modelPath))
+    model = load_model(modelPath)
+    scores = model.predict(input_data.reshape(nb, dotsperinput, nchannels, 1), verbose=1)
     del model
     del input_data
 
@@ -225,7 +220,7 @@ def EvaluateOneFile(wavFileName, LPF=False, CUTOFF=100,
     print("\t\t{}\tdone !".format(wavFileName))
 
 
-def EvaluateRandom(testMode=False):
+def EvaluateRandom():
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Silence tensorflow logs
 
     TotalTime = time.time()
@@ -233,15 +228,13 @@ def EvaluateRandom(testMode=False):
     if not os.path.isdir("graphs"):
         os.mkdir('graphs')
         os.mkdir(os.path.join('graphs', 'FallingOrRising'))
-    if testMode:
-        # # Test Files
-        wavFiles = glob.glob(os.path.join('testFiles', '*.WAV'))
-    else:
-        # Get all the WAV files under resources/fcnn
-        wavFiles = glob.glob(os.path.join('resources', 'f2cnn', '*', '*.WAV'))
-    print("\n###############################\nEvaluating network on WAV {} files in '{}'.".format(len(wavFiles),
-                                                                                                  os.path.split(
-                                                                                                      wavFiles[0])[0]))
+
+    # Get all the WAV files under resources/fcnn
+    wavFiles = glob.glob(os.path.join('resources', 'f2cnn', '*', '*.WAV'))
+
+    print("\n###############################")
+    print("Evaluating network on WAV {} files in '{}'.".format(len(wavFiles),
+                                                               os.path.split(os.path.split(wavFiles[0])[0])[0]))
 
     if not wavFiles:
         print("NO WAV FILES FOUND")
@@ -259,7 +252,8 @@ def EvaluateRandom(testMode=False):
 
     numpy.random.shuffle(wavFiles)
     for file in wavFiles:
-        EvaluateOneFile(file, CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS)
+        EvaluateOneFile(file, nchannels=nchannels, CENTER_FREQUENCIES=CENTER_FREQUENCIES,
+                        FILTERBANK_COEFFICIENTS=FILTERBANK_COEFFICIENTS)
 
     print("Evaluating network on all files.")
     print('              Total time:', time.time() - TotalTime)
