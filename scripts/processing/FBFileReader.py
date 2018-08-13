@@ -54,6 +54,7 @@ def ExtractFBFile(fbFilename, verbose=False):
                     outputMatrix[n][i] = round(d * 1000, 2)
         return outputMatrix, sampPeriod
     except FileNotFoundError:
+        print("No .FB formant data file.")
         return None, 0
 
 

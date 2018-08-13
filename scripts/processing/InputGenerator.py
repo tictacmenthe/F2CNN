@@ -70,7 +70,7 @@ def GenerateInputData(LPF=False, CUTOFF=100):
     for currentFileIndex, file in enumerate(files):
         timepoints=filesAndTimepointsDict[file]
         file = join('resources', 'f2cnn', file)
-        print("Reading:\t\t{}".format(file))
+        print("Reading:\t{}".format(file))
         envelopes = numpy.load(file)
         i=0
         for i, center in enumerate(timepoints):

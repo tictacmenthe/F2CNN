@@ -18,11 +18,15 @@ SILENTS = ['pau', 'epi', 'h#']
 
 def ExtractPhonemes(phnFilename):
     data = []
-    with open(phnFilename, 'r') as phnFile:
-        reader = csv.reader(phnFile, delimiter=' ')
-        for line in reader:
-            data.append((line[2], int(line[0]), int(line[1])))  # (phoneme, start, end) tuples
-    return data
+    try:
+        with open(phnFilename, 'r') as phnFile:
+            reader = csv.reader(phnFile, delimiter=' ')
+            for line in reader:
+                data.append((line[2], int(line[0]), int(line[1])))  # (phoneme, start, end) tuples
+        return data
+    except FileNotFoundError:
+        print("No .PHN phoneme data file.")
+        return None
 
 
 def GetPhonemeAt(phnFilename, timepoint):

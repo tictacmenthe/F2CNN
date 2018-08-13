@@ -8,7 +8,7 @@ from __future__ import division
 
 import glob
 import time
-from itertools import product, repeat
+from itertools import repeat
 from multiprocessing import cpu_count, Value
 from multiprocessing.pool import Pool
 from os.path import splitext, join, split
@@ -127,10 +127,10 @@ def ExtractAllEnvelopes(LPF=False, CUTOFF=100):
         print("Not using Low Pass Filtering")
 
     if not gfbFiles:
-        print("NO GFB.npy FILES FOUND")
+        print("ERROR: NO .GFB.npy FILES FOUND")
         exit(-1)
 
-    print(len(gfbFiles), "files found")
+    print(len(gfbFiles), ".GFB.npy files found")
 
     # Usage of multiprocessing, to reduce computing time
     proc = cpu_count()

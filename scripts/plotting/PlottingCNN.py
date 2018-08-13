@@ -65,10 +65,11 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES
     # Plotting the phonemes
     mini = axproba.get_ylim()[0]
     maxi = axproba.get_ylim()[1]
-    for phoneme, start, end in phonemes:
-        axproba.axvline(end / 16000, color="k", linewidth=2)
-        axproba.text((end + start) / 32000, mini - 0.12 * (maxi - mini), phoneme, fontsize=8,
-                     horizontalalignment='center', verticalalignment='top', weight='bold')
+    if phonemes is not None:
+        for phoneme, start, end in phonemes:
+            axproba.axvline(end / 16000, color="k", linewidth=2)
+            axproba.text((end + start) / 32000, mini - 0.12 * (maxi - mini), phoneme, fontsize=8,
+                         horizontalalignment='center', verticalalignment='top', weight='bold')
 
     # GetLabelsFromFile('resources/f2cnn/TEST/DR1.FELC0.SX216.WAV')
     aximg.legend()
