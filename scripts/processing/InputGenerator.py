@@ -38,6 +38,7 @@ def GenerateInputData(LPF=False, CUTOFF=100):
         exit(-1)
     csvFilename = join("trainingData", "label_data.csv")
 
+    # Extract all filepaths and timepoints for each file as a dict{file:[timepoints]}
     filesAndTimepointsDict = GetListOfEnvelopeFilesAndTimepoints(csvFilename)
 
     print("\n###############################\nGenerating Input Data from files with '{}'.".format(csvFilename))
@@ -47,7 +48,7 @@ def GenerateInputData(LPF=False, CUTOFF=100):
         print("Not using Low Pass Filtering")
 
     if not filesAndTimepointsDict:
-        print("NO ENV1.npy FILES FOUND")
+        print("NO ENV1.npy FILES FOUND, PLEASE GENERATE ENVELOPES")
         exit(-1)
     files=filesAndTimepointsDict.keys()
     files=sorted(files)

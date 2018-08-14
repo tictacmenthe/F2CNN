@@ -1,5 +1,5 @@
 import argparse
-from os.path import join
+from os.path import join, isfile
 
 from scripts.processing.OrganiseFiles import OrganiseAllFiles
 from scripts.processing.GammatoneFiltering import FilterAllOrganisedFiles
@@ -115,6 +115,8 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
                 print("Please use --file or -f command to give an input file")
         elif args.cnn_command == 'train':
             inputFile = args.file or join('trainingData', 'input_data.npy')
+            if not isfile(inputFile):
+                print("Please use this command only after having prepared input data,\nor give a path to an input data file with --file")
             CNN_FUNCTIONS[args.cnn_command](inputFile)
         else:
             CNN_FUNCTIONS[args.cnn_command]()

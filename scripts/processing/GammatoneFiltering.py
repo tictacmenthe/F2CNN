@@ -30,6 +30,23 @@ from gammatone import filters
 counter = None
 
 
+def GetArrayFromWAV(filename):
+    try:
+        print(filename)
+        wavFile = wave.open(filename, 'r')
+    except wave.Error:
+        print("Correcting missing RIFF...")
+        ConvertWavFile(filename)
+        wavFile = wave.open(filename, 'r')
+    wavList = numpy.zeros(wavFile.getnframes())
+    framerate = wavFile.getframerate()
+    for i in range(wavFile.getnframes()):
+        a = wavFile.readframes(1)
+        a = struct.unpack("<h", a)[0]
+        wavList[i] = a
+    return wavList, framerate
+
+
 def GetFilteredOutputFromFile(filename, FILTERBANK_COEFFICIENTS):
     """
     Computes the output of a gammatone filterbank applied to the WAV file 'filename'
@@ -62,8 +79,8 @@ def GetFilteredOutputFromFile(filename, FILTERBANK_COEFFICIENTS):
 def GetFilteredOutputFromArray(array, FILTERBANK_COEFFICIENTS):
     # gammatone library needs a numpy array
     # Application of the filterbank to a vector
-    filteredMatrix = filters.erb_filterbank(array,
-                                            FILTERBANK_COEFFICIENTS)  # Matrix of wavFile.getnframes() X 128 real values
+    filteredMatrix = filters.erb_filterbank(array, FILTERBANK_COEFFICIENTS)
+    # Matrix of wavFile.getnframes() X 128 real values
     return filteredMatrix
 
 
@@ -77,8 +94,8 @@ def ConvertWavFile(filename):
     newname = splitext(filename)[0] + '.mp3'
     copyfile(filename, newname)
     remove(filename)
-    FNULL = open(os.devnull, 'w')
-    subprocess.call(['ffmpeg', '-i', newname, filename], stdout=FNULL, stderr=subprocess.STDOUT, close_fds=True)
+    with open(os.devnull, 'w') as FNULL:
+        subprocess.call(['ffmpeg', '-i', newname, filename], stdout=FNULL, stderr=subprocess.STDOUT, close_fds=True)
     remove(newname)
 
 
@@ -103,14 +120,14 @@ def GammatoneFiltering(wavFile, n):
 
     global counter
     with counter.get_lock():
-        counter.value+=1
-        print("\t\t{:<50} done ! {}/{} Files.".format(wavFile, counter.value,n))
+        counter.value += 1
+        print("\t\t{:<50} done ! {}/{} Files.".format(wavFile, counter.value, n))
 
 
 def InitProcesses(FBCOEFS, cn):
     global FILTERBANK_COEFFICIENTS
     global counter
-    counter=cn
+    counter = cn
     FILTERBANK_COEFFICIENTS = FBCOEFS
 
 
@@ -123,7 +140,7 @@ def FilterAllOrganisedFiles():
     print("\n###############################\nApplying FilterBank to files in '{}'.".format(split(wavFiles[0])[0]))
 
     if not wavFiles:
-        print("NO WAV FILES FOUND")
+        print("NO WAV FILES FOUND, PLEASE ORGANIZE FILES")
         exit(-1)
 
     print(len(wavFiles), "files found")
@@ -143,7 +160,7 @@ def FilterAllOrganisedFiles():
     # Usage of multiprocessing, to reduce computing time
     proc = cpu_count()
     counter = Value('i', 0)
-    multiproc_pool = Pool(processes=proc, initializer = InitProcesses, initargs=(FILTERBANK_COEFFICIENTS, counter,))
+    multiproc_pool = Pool(processes=proc, initializer=InitProcesses, initargs=(FILTERBANK_COEFFICIENTS, counter,))
     multiproc_pool.starmap(GammatoneFiltering, zip(wavFiles, repeat(len(wavFiles))))
 
     print("Filtered and Saved all files.")

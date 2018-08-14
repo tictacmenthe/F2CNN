@@ -6,14 +6,17 @@ This file includes functions allowing to evaluate the neural network on files, g
 
 import glob
 import os
+import struct
 import time
+import wave
+
 import numpy
 from configparser import ConfigParser
 
 from gammatone import filters
 from scripts.processing.EnvelopeExtraction import ExtractEnvelopeFromMatrix
 from scripts.processing.FBFileReader import ExtractFBFile
-from scripts.processing.GammatoneFiltering import GetFilteredOutputFromFile
+from scripts.processing.GammatoneFiltering import GetArrayFromWAV, GetFilteredOutputFromArray
 from scripts.processing.PHNFileReader import ExtractPhonemes
 from scripts.plotting.PlottingCNN import PlotEnvelopesAndCNNResultsWithPhonemes
 from .Training import normalizeInput
@@ -37,8 +40,10 @@ def EvaluateOneFile(wavFileName, keras, CENTER_FREQUENCIES=None,
     # #### READING CONFIG FILE
     config = ConfigParser()
     config.read('F2CNN.conf')
-    framerate = config.getint('FILTERBANK', 'FRAMERATE')
     ustos = 1 / 1000000.
+
+    wavList, framerate = GetArrayFromWAV(wavFileName)
+
     if CENTER_FREQUENCIES is None:
         nchannels = config.getint('FILTERBANK', 'NCHANNELS')
         lowcutoff = config.getint('FILTERBANK', 'LOW')
@@ -49,8 +54,7 @@ def EvaluateOneFile(wavFileName, keras, CENTER_FREQUENCIES=None,
         FILTERBANK_COEFFICIENTS = filters.make_erb_filters(framerate, CENTER_FREQUENCIES)
 
     print("Applying filterbank...")
-    filtered, framerate = GetFilteredOutputFromFile(wavFileName, FILTERBANK_COEFFICIENTS)
-
+    filtered = GetFilteredOutputFromArray(wavList, FILTERBANK_COEFFICIENTS)
     print("Extracting Envelope...")
     envelopes = ExtractEnvelopeFromMatrix(filtered)
     del filtered
@@ -125,7 +129,8 @@ def EvaluateRandom(testMode=False):
 
     numpy.random.shuffle(wavFiles)
     for file in wavFiles:
-        EvaluateOneFile(file, keras) # We give keras to avoid importing it for every file, and avoid importing it globally as it slows application startup
+        EvaluateOneFile(file, keras, CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS)
+        # We give keras to avoid importing it for every file, and avoid importing it globally as it slows application startup
 
     print("Evaluating network on all files.")
     print('              Total time:', time.time() - TotalTime)

@@ -2,7 +2,6 @@
     This file gives access to plotting CNN result data for this project
 """
 
-import os
 from configparser import ConfigParser
 
 import matplotlib.pyplot as plt
@@ -16,8 +15,8 @@ from scripts.plotting.PlottingProcessing import ReshapeEnvelopesForSpectrogram
 def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES, phonemes, Formants=None, title=""):
     image = ReshapeEnvelopesForSpectrogram(envelopes, CENTER_FREQUENCIES)
     formant = []
-    # fig = plt.figure()
-    fig = plt.figure(figsize=(35,18))
+    fig = plt.figure()
+    # fig = plt.figure(figsize=(35,18))
     aximg = fig.add_subplot(211)
     axproba = fig.add_subplot(212)
     axproba.axis([0, len(image[0]) / 16000, -1.6, 1.6])
@@ -51,23 +50,36 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES
         axproba.plot(xformant[5:-5], [numpy.arctan(slope) for slope in slopes], 'g', label='Arctan(F2\')')
         axproba.plot(xformant[5:-5], pvalues, 'r', label='p-values of slopes')
 
-    cnnRising = [-100 if neg > pos else 2500 for neg, pos in scores]
-    cnnFalling = [500 if neg > pos else -100 for neg, pos in scores]
-    pRising = [pos for _, pos in scores]
+    # Extraction and plotting of rising/falling results
+    cnnRising, cnnFalling, cnnNone, pRising = [], [], [], []
+    if len(scores[0]) == 2:     # If we only have Rising and Falling classes
+        cnnRising = [2500 if pos > neg else -100 for neg, pos in scores]
+        cnnFalling = [500 if neg > pos else -100 for neg, pos in scores]
+        pRising = [pos for _, pos in scores]
+    elif len(scores[0]) == 3:   # If we have a third 'none' class
+        cnnRising = [2500 if pos > neg and pos > none else -100 for neg, pos, none in scores]
+        cnnFalling = [500 if neg > pos and neg > none else -100 for neg, pos, none in scores]
+        cnnNone = [1500 if none > neg and none > pos else -100 for neg, pos, none in scores]
+        pRising = [pos for _, pos, _ in scores]
     xres = numpy.linspace(0.055, len(image[0]) / 16000 - 0.055, len(cnnRising))
     aximg.plot(xres, cnnRising, 'r|', label='Rising')
-    aximg.plot(xres, cnnFalling, 'b|    ', label='Falling')
+    aximg.plot(xres, cnnFalling, 'b|', label='Falling')
+    if len(scores[0]) == 3:
+        aximg.plot(xres, cnnNone, 'k|', label='Neither')
+
     aximg.set_xlabel("Time(s)")
     aximg.set_ylabel("Frequency(Hz)")
     axproba.set_xlabel("Time(s)")
 
-    axproba.plot(xres, pRising, label='Pro')
+    # Plotting the probability of rising according to the used network
+    axproba.plot(xres, pRising, label='Probability of F2 rising for network')
+
     # Plotting the phonemes
     mini = axproba.get_ylim()[0]
     maxi = axproba.get_ylim()[1]
     if phonemes is not None:
         for phoneme, start, end in phonemes:
-            axproba.axvline(end / 16000, color="k", linewidth=2)
+            axproba.axvline(end / 16000, color="xkcd:olive", linewidth=1)
             axproba.text((end + start) / 32000, mini - 0.12 * (maxi - mini), phoneme, fontsize=8,
                          horizontalalignment='center', verticalalignment='top', weight='bold')
 
@@ -77,10 +89,20 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES
     axproba.minorticks_on()
     axproba.grid(True, 'major', linestyle='-')
     axproba.grid(True, 'minor', linestyle='--')
+
+    # Probability limits
+    axproba.axhline(0)
+    axproba.axhline(0.5)
+    axproba.axhline(1.0)
+    xlim=axproba.get_xlim()
+
+    plt.annotate('Rising', xy=(0,1.0), xytext=(-0.1*xlim[1],1.2), arrowprops=dict(facecolor='black', shrink=0.01))
+    plt.annotate('Falling', xy=(0,0.0), xytext=(-0.1*xlim[1],-0.2), arrowprops=dict(facecolor='black', shrink=0.01))
+
     plt.title(title)
-    figMgr=plt.get_current_fig_manager()
+    figMgr = plt.get_current_fig_manager()
     figMgr.resize(*figMgr.window.maxsize())
-    # plt.show(fig)
-    plt.savefig(os.path.join("graphs", "FallingOrRising", "FallingOrRising." + os.path.split(title)[1] + ".png"),
-                dpi=100)
-    plt.close(fig)
+    plt.show(fig)
+    # plt.savefig(os.path.join("graphs", "FallingOrRising", "FallingOrRising." + os.path.split(title)[1] + ".png"),
+    #             dpi=100)
+    # plt.close(fig)

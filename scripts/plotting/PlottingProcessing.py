@@ -4,6 +4,7 @@
 
 import os
 import time
+import wave
 
 import numpy
 import matplotlib.pyplot as plt
@@ -73,8 +74,11 @@ def PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES):
 
 
 def PlotEnvelopesAndF2FromFile(filename):
-    CENTER_FREQUENCIES = centre_freqs(16000, 128, 100)
-    FILTERBANK_COEFFICIENTS = make_erb_filters(16000, CENTER_FREQUENCIES)
+    wavFile=wave.open(filename)
+    framerate=wavFile.getframerate()
+    ustos=1.0/1000000
+    CENTER_FREQUENCIES = centre_freqs(framerate, 128, 100)
+    FILTERBANK_COEFFICIENTS = make_erb_filters(framerate, CENTER_FREQUENCIES)
     matrix, framerate = GetFilteredOutputFromFile(filename, FILTERBANK_COEFFICIENTS)
     matrix = ExtractEnvelopeFromMatrix(matrix)
     PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES)
@@ -86,7 +90,7 @@ def PlotEnvelopesAndF2FromFile(filename):
         for i in range(4):
             for j in range(len(formants)):
                 Formants[i].append(formants[j][i])
-        t = [i * sampPeriod / 1000000. for i in range(len(Formants[0]))]
+        t = [i * sampPeriod * ustos for i in range(len(Formants[0]))]
         for i, Formant in enumerate(Formants):
             plt.plot(t, Formant, label='F{} Frequencies (Hz)'.format(i + 1))
         plt.legend()

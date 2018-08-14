@@ -29,6 +29,13 @@ def ExtractPhonemes(phnFilename):
         return None
 
 
+def GetPhonemeFromArrayAt(phonemes, timepoint):
+    for line in phonemes:
+        if line[1]<=timepoint<=line[2]:
+            return line[0]
+    return 'h#'
+
+
 def GetPhonemeAt(phnFilename, timepoint):
     """
     Returns the current phoneme at a TIMIT .WAV file frame
@@ -36,8 +43,4 @@ def GetPhonemeAt(phnFilename, timepoint):
     :param timepoint: the frame in the TIMIT .WAV file
     :return: the actual phoneme
     """
-    data = ExtractPhonemes(phnFilename)
-    for line in data:
-        if line[1] <= timepoint <= line[2]:
-            return line[0]
-    return 'h#'
+    return GetPhonemeFromArrayAt(ExtractPhonemes(phnFilename), timepoint)

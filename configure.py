@@ -3,7 +3,7 @@ from configparser import ConfigParser
 framerate = input('Enter the working framerate(default 16000):') or '16000'
 nchannels = input('Enter the number of filterbank channels(default 128):') or '128'
 lowcutoff = input('Enter the low cutoff frequency(default 100):') or '100'
-sampPeriod = input('Enter the label database sampling period(default 10000') or '10000'
+sampPeriod = input('Enter the label database sampling period(default 10000):') or '10000'
 classes = input(
     'How many input labels should there be? \n\t\t2:rising and falling\n\t\t3:falling, rising, none)\nChoice:(default 2)') or '2'
 inputRadius = input(

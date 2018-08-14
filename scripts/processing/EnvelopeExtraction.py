@@ -127,7 +127,7 @@ def ExtractAllEnvelopes(LPF=False, CUTOFF=100):
         print("Not using Low Pass Filtering")
 
     if not gfbFiles:
-        print("ERROR: NO .GFB.npy FILES FOUND")
+        print("ERROR: NO .GFB.npy FILES FOUND, PLEASE GENERATE FILTERED OUTPUTS")
         exit(-1)
 
     print(len(gfbFiles), ".GFB.npy files found")
