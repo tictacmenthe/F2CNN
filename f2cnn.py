@@ -91,11 +91,11 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
 
     # Processes the input arguments
     args = parser.parse_args()
-
     print(args)
+
     # Calls to functions according to arguments
     if 'prepare_command' in args:
-        if args.prepare_command in ['envelope', 'input']:
+        if args.prepare_command in ['envelope', 'input']:   # In case we need to use a low pass filter
             PREPARE_FUNCTIONS[args.prepare_command](False if args.CUTOFF is None else True, args.CUTOFF)
         else:
             PREPARE_FUNCTIONS[args.prepare_command]()
@@ -108,9 +108,18 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
 
     elif 'cnn_command' in args:
         if args.cnn_command == 'eval':
-            import keras
             if args.file is not None:
-                CNN_FUNCTIONS[args.cnn_command](args.file, keras)
+                evalArgs = []
+                import keras
+                evalArgs.append(args.file)
+                evalArgs.append(keras)
+                if args.CUTOFF is not None:
+                    evalArgs.append(True)
+                    evalArgs.append(args.CUTOFF)
+                print(evalArgs)
+                print(*evalArgs)
+                exit()
+                CNN_FUNCTIONS[args.cnn_command](*evalArgs)
             else:
                 print("Please use --file or -f command to give an input file")
         elif args.cnn_command == 'train':
@@ -118,8 +127,14 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
             if not isfile(inputFile):
                 print("Please use this command only after having prepared input data,\nor give a path to an input data file with --file")
             CNN_FUNCTIONS[args.cnn_command](inputFile)
-        else:
-            CNN_FUNCTIONS[args.cnn_command]()
+        elif args.cnn_command == 'evalrand':
+            if args.count is not None:
+                CNN_FUNCTIONS[args.cnn_command](args.count)
+            else:
+                CNN_FUNCTIONS[args.cnn_command]()
+    else:
+        print("For help, use python3 f2cnn.py --help or -h.")
+        print("No valid command given.")
 
 
 if __name__ == '__main__':

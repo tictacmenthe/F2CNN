@@ -7,7 +7,7 @@ sampPeriod = input('Enter the label database sampling period(default 10000):') o
 classes = input(
     'How many input labels should there be? \n\t\t2:rising and falling\n\t\t3:falling, rising, none)\nChoice:(default 2)') or '2'
 inputRadius = input(
-    'Enter the CNN input radius(frames used will be between i+-radius*samplitperiod of .FB files) in ms(default 5):') or '5'
+    'Enter the CNN input radius(frames used will be between i+-radius*samplitperiod of .FB files)(default 5 values):') or '5'
 batchsize = input('Enter the CNN batch size(default 32):') or '32'
 epochs = input('Enter the CNN max epochs(default 20):') or '20'
 risk = input('Enter the CNN labeling slope risk(default 5%):') or '0.05'

@@ -15,8 +15,8 @@ from scripts.plotting.PlottingProcessing import ReshapeEnvelopesForSpectrogram
 def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES, phonemes, Formants=None, title=""):
     image = ReshapeEnvelopesForSpectrogram(envelopes, CENTER_FREQUENCIES)
     formant = []
-    fig = plt.figure()
-    # fig = plt.figure(figsize=(35,18))
+    # fig = plt.figure()
+    fig = plt.figure(figsize=(32,16))
     aximg = fig.add_subplot(211)
     axproba = fig.add_subplot(212)
     axproba.axis([0, len(image[0]) / 16000, -1.6, 1.6])
@@ -102,7 +102,7 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES
     plt.title(title)
     figMgr = plt.get_current_fig_manager()
     figMgr.resize(*figMgr.window.maxsize())
-    plt.show(fig)
-    # plt.savefig(os.path.join("graphs", "FallingOrRising", "FallingOrRising." + os.path.split(title)[1] + ".png"),
-    #             dpi=100)
-    # plt.close(fig)
+    # plt.show(fig)
+    plt.savefig(os.path.join("graphs", "FallingOrRising", "FallingOrRising." + os.path.split(title)[1] + ".png"),
+                dpi=100)
+    plt.close(fig)

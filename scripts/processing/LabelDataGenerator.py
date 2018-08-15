@@ -42,9 +42,8 @@ def GenerateLabelData():
 
     # Get all the files under resources
     filenames = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))
-
     print("\n###############################\nGenerating Label Data from files in '{}' into {} classes.".format(
-        split(split(filenames[0])[0])[0]), NUMCLASSES)
+        split(split(filenames[0])[0])[0], NUMCLASSES))
 
     # Alphanumeric order
     filenames = sorted(filenames)
@@ -61,7 +60,7 @@ def GenerateLabelData():
 
     # Get the data into a list of lists for the CSV
     for i, file in enumerate(filenames):
-        print("{}/{}\t\tReading:\t{}".format(i, nfiles, file))
+        print("Reading:\t{:<50}\t{}/{}".format(file, i, nfiles))
         # Load the F2 values of the file
         F2Array, _ = GetF2Frequencies(splitext(file)[0] + '.FB')
         phonemes = ExtractPhonemes(splitext(file)[0] + '.PHN')
@@ -114,7 +113,7 @@ def GenerateLabelData():
                 entry.append(2)
                 csvLines.append(entry)
 
-        print("\t\t{:<50} done !".format(file))
+        print("\t\t{:<50}\tdone !".format(file))
 
     # Saving into a file
     filePath = join("trainingData", "label_data.csv")

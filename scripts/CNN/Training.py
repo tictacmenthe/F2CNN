@@ -123,6 +123,10 @@ def TrainAndPlotLoss(inputFile=None):
     model.compile(loss=keras.losses.categorical_crossentropy,
                   optimizer=opt,
                   metrics=['accuracy'])
+
+    # STOP callback, used to stop training before the maximum number of epochs,
+    # if the network stops getting better for the value 'monitor',
+    # with less than 'min_delta' variation over 'patience' epochs
     stopCallback = keras.callbacks.EarlyStopping(monitor='val_acc', min_delta=0.01, patience=5, verbose=1, mode='auto',
                                                  baseline=None)
 
@@ -140,7 +144,8 @@ def TrainAndPlotLoss(inputFile=None):
 
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
-    fig = pyplot.figure()
+    # Plotting of the training results, validation accuracy and validation loss accross epochs
+    fig = pyplot.figure(figsize=(32,16))
     val_acc = fig.add_subplot(121)
     val_loss = fig.add_subplot(122)
     val_acc.plot(history.history['val_acc'], label='Validation Accuracy')
@@ -151,3 +156,4 @@ def TrainAndPlotLoss(inputFile=None):
     val_acc.legend()
     val_loss.legend()
     pyplot.show(fig)
+    pyplot.savefig('last_trained_model_results.png')

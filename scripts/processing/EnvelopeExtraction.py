@@ -75,14 +75,14 @@ def ExtractEnvelope(gfbFileName, nbf, LPF=False, CUTOFF=100):
     :param nbf: number of files, for printing
     :param gfbFileName: path to the file to be processed, with the extension .GFB.npy
     """
-    print("File:\t\t{}".format(gfbFileName))
+    print("File:\t{}".format(gfbFileName))
     # Load the matrix
     matrix = numpy.load(gfbFileName)
     envelopes = ExtractEnvelopeFromMatrix(matrix, LPF, CUTOFF)
     global counter
     with counter.get_lock():
         counter.value += 1
-        print("\t\t{:<50} done ! {}/{} Files.".format(gfbFileName, counter.value, nbf))
+        print("\t{:<50} done ! {}/{} Files.".format(gfbFileName, counter.value, nbf))
     return envelopes
 
 
@@ -105,7 +105,15 @@ def ExtractAndSaveEnvelope(gfbFileName, nbf, LPF=False, CUTOFF=100):
     :param LPF: boolean for whether or not using low pass filtering
     :param CUTOFF: cutoff frequency of the LPF
     """
-    SaveEnvelope(ExtractEnvelope(gfbFileName, nbf, LPF, CUTOFF), gfbFileName)
+    saveName=gfbFileName
+    # saveName=splitext(gfbFileName)
+    # if LPF:
+    #     saveName=saveName[0]+'.LPF'+str(CUTOFF)+saveName[1]
+    #     print(saveName)
+    # else:
+    #     saveName=gfbFileName
+    # return
+    SaveEnvelope(ExtractEnvelope(gfbFileName, nbf, LPF, CUTOFF), saveName)
 
 
 def InitProcesses(cn):
