@@ -6,19 +6,17 @@ This file includes functions allowing to evaluate the neural network on files, g
 
 import glob
 import os
-import struct
 import time
-import wave
-
-import numpy
 from configparser import ConfigParser
 
+import numpy
+
 from gammatone import filters
+from scripts.plotting.PlottingCNN import PlotEnvelopesAndCNNResultsWithPhonemes
 from scripts.processing.EnvelopeExtraction import ExtractEnvelopeFromMatrix
 from scripts.processing.FBFileReader import ExtractFBFile
 from scripts.processing.GammatoneFiltering import GetArrayFromWAV, GetFilteredOutputFromArray
 from scripts.processing.PHNFileReader import ExtractPhonemes
-from scripts.plotting.PlottingCNN import PlotEnvelopesAndCNNResultsWithPhonemes
 from .Training import normalizeInput
 
 
@@ -42,7 +40,7 @@ def EvaluateOneFile(wavFileName, keras, CENTER_FREQUENCIES=None,
     config.read('F2CNN.conf')
     ustos = 1 / 1000000.
 
-    wavList, framerate = GetArrayFromWAV(wavFileName)
+    framerate, wavList = GetArrayFromWAV(wavFileName)
 
     if CENTER_FREQUENCIES is None:
         nchannels = config.getint('FILTERBANK', 'NCHANNELS')

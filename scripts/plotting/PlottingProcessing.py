@@ -3,11 +3,9 @@
 """
 
 import os
-import time
-import wave
 
-import numpy
 import matplotlib.pyplot as plt
+import numpy
 from matplotlib.colors import LogNorm
 
 from gammatone.filters import centre_freqs, make_erb_filters
