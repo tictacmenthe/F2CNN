@@ -4,9 +4,9 @@ The actual training uses TIMIT database and VTR Formants database.
 
 
 ## Usage
-Use the configure.py script with python3 to initialize a few parameters for the program.\
+**Use the configure.py script with python3 to initialize a few parameters for the program.**\
 Run it every time one of the project parameters need to change (Sampling rates, cutoff frequencies, numbers of channels, number of classes...).\
-Use the f2cnn.py **Python3** script as en entrance or use the functions in the scripts/ directories in your own.
+Use the f2cnn.py **Python3** script as en entrance like in the examples below, or use the functions in the scripts/ directories in your own.
 
 ###Examples:
 ```python3 f2cnn.py -h/--help``` \
@@ -53,17 +53,16 @@ So make sure to put the TIMIT(the one including TEST and TRAIN directories) and 
 ### Dependencies
 
 This project requires the installation of:
-- numpy
-- matplotlib
-- keras
-- scipy
+- numpy - 1.14.5
+- matplotlib - 2.2.2
+- keras - 2.2.0
+- scipy - 1.1.0
 Also, some packages are needed for the training:
 There are two cases:
 ##### 1. You will use your CPU
-* tensorflow
+* tensorflow with pip
 ##### 2. You will use a GPU (preferably from NVIDIA)
-* tensorflow-cuda (or tensorflow-gpu in PIP)
-* cudnn
-* cuda
+* tensorflow-cuda (or tensorflow-gpu in PIP) - 1.9.0
+* cuda  -   9.2.148-1  | installed with the nvidia cuda toolkit 9.2
 
 If you have any issues or suggestions, you can send an email at *tictacmenthedouce@gmail.com* .

@@ -13,7 +13,7 @@ from matplotlib.colors import LogNorm
 from gammatone.filters import centre_freqs, make_erb_filters
 from scripts.processing.EnvelopeExtraction import ExtractEnvelopeFromMatrix
 from scripts.processing.FBFileReader import ExtractFBFile
-from scripts.processing.GammatoneFiltering import GetFilteredOutputFromFile
+from scripts.processing.GammatoneFiltering import GetFilteredOutputFromFile, GetArrayFromWAV
 
 
 def ERBScale(f):
@@ -74,8 +74,7 @@ def PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES):
 
 
 def PlotEnvelopesAndF2FromFile(filename):
-    wavFile=wave.open(filename)
-    framerate=wavFile.getframerate()
+    framerate, _ = GetArrayFromWAV(filename)
     ustos=1.0/1000000
     CENTER_FREQUENCIES = centre_freqs(framerate, 128, 100)
     FILTERBANK_COEFFICIENTS = make_erb_filters(framerate, CENTER_FREQUENCIES)

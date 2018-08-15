@@ -8,14 +8,13 @@ Requires a prior execution of the OrganiseFiles.py, GammatoneFiltering.py, Envel
 import csv
 import glob
 import time
-import wave
 from configparser import ConfigParser
 from os.path import join, split, splitext
 
 import numpy
 from scipy.stats import pearsonr
 
-from scripts.processing.GammatoneFiltering import ConvertWavFile
+from scripts.processing.GammatoneFiltering import GetArrayFromWAV
 from .FBFileReader import GetF2Frequencies, GetF2FrequenciesAround
 from .PHNFileReader import ExtractPhonemes, SILENTS, GetPhonemeFromArrayAt
 
@@ -65,16 +64,9 @@ def GenerateLabelData():
         F2Array, _ = GetF2Frequencies(splitext(file)[0] + '.FB')
         phonemes = ExtractPhonemes(splitext(file)[0] + '.PHN')
         # Get number of points
-        try:
-            wavFile = wave.open(file, 'r')
-        except wave.Error:
-            print("Converting file to correct format...")
-            ConvertWavFile(file)
-            wavFile = wave.open(file, 'r')
-        framerate = wavFile.getframerate()
-        nf = wavFile.getnframes()
+        framerate, wavList = GetArrayFromWAV(file)
+        nf = len(wavList)
         nb = int(nf / (framerate * SAMPPERIOD * ustos) - dotsperinput - 1)
-        wavFile.close()
 
         # Get the information about the person
         region, speaker, sentence, _ = split(file)[1].split(".")

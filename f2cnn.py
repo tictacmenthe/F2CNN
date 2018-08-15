@@ -87,7 +87,7 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
                                        formatter_class=argparse.RawTextHelpFormatter)
     parser_cnn.add_argument('--file', '-f', action='store', dest='file', nargs='?', help=fileHelpText)
     parser_cnn.add_argument('cnn_command', choices=CNN_FUNCTIONS.keys(), help=cnnHelpText)
-    parser_cnn.add_argument('--count','-c', action='store', type=int, help="Number of files to be evaluated")
+    parser_cnn.add_argument('--count', '-c', action='store', type=int, help="Number of files to be evaluated")
 
     # Processes the input arguments
     args = parser.parse_args()
@@ -95,7 +95,7 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
 
     # Calls to functions according to arguments
     if 'prepare_command' in args:
-        if args.prepare_command in ['envelope', 'input', 'all']:   # In case we need to use a low pass filter
+        if args.prepare_command in ['envelope', 'input', 'all']:  # In case we need to use a low pass filter
             PREPARE_FUNCTIONS[args.prepare_command](False if args.CUTOFF is None else True, args.CUTOFF)
         else:
             PREPARE_FUNCTIONS[args.prepare_command]()
@@ -117,7 +117,6 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
                     evalArgs.append(True)
                     evalArgs.append(args.CUTOFF)
                 print(evalArgs)
-                print(*evalArgs)
                 exit()
                 CNN_FUNCTIONS[args.cnn_command](*evalArgs)
             else:
@@ -125,7 +124,8 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
         elif args.cnn_command == 'train':
             inputFile = args.file or join('trainingData', 'input_data.npy')
             if not isfile(inputFile):
-                print("Please use this command only after having prepared input data,\nor give a path to an input data file with --file")
+                print(
+                    "Please use this command only after having prepared input data,\nor give a path to an input data file with --file")
             CNN_FUNCTIONS[args.cnn_command](inputFile)
         elif args.cnn_command == 'evalrand':
             if args.count is not None:

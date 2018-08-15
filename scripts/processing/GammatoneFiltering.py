@@ -9,21 +9,15 @@ The files should be first processed with OrganiseFiles.py
 """
 
 import glob
-import os
-import struct
-import subprocess
 import time
-import wave
 from configparser import ConfigParser
-from itertools import product, repeat
+from itertools import repeat
 from multiprocessing import cpu_count, Value
 from multiprocessing.pool import Pool
-from os import remove
 from os.path import splitext, join, split
-from shutil import copyfile
 
 import numpy
-from matplotlib.colors import LogNorm
+from scipy.io import wavfile as WavFileReader
 
 from gammatone import filters
 
@@ -31,49 +25,8 @@ counter = None
 
 
 def GetArrayFromWAV(filename):
-    try:
-        print(filename)
-        wavFile = wave.open(filename, 'r')
-    except wave.Error:
-        print("Correcting missing RIFF...")
-        ConvertWavFile(filename)
-        wavFile = wave.open(filename, 'r')
-    wavList = numpy.zeros(wavFile.getnframes())
-    framerate = wavFile.getframerate()
-    for i in range(wavFile.getnframes()):
-        a = wavFile.readframes(1)
-        a = struct.unpack("<h", a)[0]
-        wavList[i] = a
-    return wavList, framerate
-
-
-def GetFilteredOutputFromFile(filename, FILTERBANK_COEFFICIENTS):
-    """
-    Computes the output of a gammatone filterbank applied to the WAV file 'filename'
-    :param FILTERBANK_COEFFICIENTS
-    :param filename: path to a WAV file
-    :return: number of frames in the file, and output matrix (128*nbframes) of the filterbank
-    """
-    # .WAV file to list
-    try:
-        print(filename)
-        wavFile = wave.open(filename, 'r')
-    except wave.Error:
-        print("Converting file to correct format...")
-        ConvertWavFile(filename)
-        wavFile = wave.open(filename, 'r')
-    wavList = numpy.zeros(wavFile.getnframes())
-    for i in range(wavFile.getnframes()):
-        a = wavFile.readframes(1)
-        a = struct.unpack("<h", a)[0]
-        wavList[i] = a
-
-    # # If plotting is needed
-    # t = [i for i in range(len(wavList))]
-    # plt.plot(t, wavList)
-    # plt.show()
-
-    return GetFilteredOutputFromArray(wavList, FILTERBANK_COEFFICIENTS), wavFile.getframerate()
+    framerate, wavArray = WavFileReader.read(filename)
+    return framerate, wavArray
 
 
 def GetFilteredOutputFromArray(array, FILTERBANK_COEFFICIENTS):
@@ -84,19 +37,15 @@ def GetFilteredOutputFromArray(array, FILTERBANK_COEFFICIENTS):
     return filteredMatrix
 
 
-def ConvertWavFile(filename):
+def GetFilteredOutputFromFile(filename, FILTERBANK_COEFFICIENTS):
     """
-    The files in the TIMIT database were created using Sphere, and are not valid WAV files for wave library.
-    Some of these WAV files seem to miss some features needed by the wave library (RIFF ID), this counters that with a
-    small hack that reconverts to a correct wav file with ffmpeg
-    :param filename: path to the WAV file
+    Computes the output of a gammatone filterbank applied to the WAV file 'filename'
+    :param FILTERBANK_COEFFICIENTS
+    :param filename: path to a WAV file
+    :return: number of frames in the file, and output matrix (128*nbframes) of the filterbank
     """
-    newname = splitext(filename)[0] + '.mp3'
-    copyfile(filename, newname)
-    remove(filename)
-    with open(os.devnull, 'w') as FNULL:
-        subprocess.call(['ffmpeg', '-i', newname, filename], stdout=FNULL, stderr=subprocess.STDOUT, close_fds=True)
-    remove(newname)
+    framerate, wavArray = GetArrayFromWAV(filename)
+    return GetFilteredOutputFromArray(wavArray, FILTERBANK_COEFFICIENTS), framerate
 
 
 def saveGFBMatrix(filename, matrix):
@@ -135,7 +84,8 @@ def FilterAllOrganisedFiles():
     TotalTime = time.time()
 
     # Get all the WAV files under resources
-    wavFiles = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))
+    # wavFiles = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))
+    wavFiles = glob.glob(join("resources", "f2cnn", "**", "*.WAV"))
 
     print("\n###############################\nApplying FilterBank to files in '{}'.".format(split(wavFiles[0])[0]))
 

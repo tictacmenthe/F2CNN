@@ -106,6 +106,7 @@ def ExtractAndSaveEnvelope(gfbFileName, nbf, LPF=False, CUTOFF=100):
     :param CUTOFF: cutoff frequency of the LPF
     """
     saveName=gfbFileName
+    # Should the envelopes be saved according to their cutoff?
     # saveName=splitext(gfbFileName)
     # if LPF:
     #     saveName=saveName[0]+'.LPF'+str(CUTOFF)+saveName[1]
