@@ -11,15 +11,15 @@ from scripts.CNN.Evaluating import EvaluateOneFile, EvaluateRandom
 from scripts.CNN.Training import TrainAndPlotLoss
 
 
-def All():
+def All(LPF=False, CUTOFF=100):
     """
     Does all the treatments required for the training
     """
     OrganiseAllFiles()
     FilterAllOrganisedFiles()
-    ExtractAllEnvelopes()
+    ExtractAllEnvelopes(LPF, CUTOFF)
     GenerateLabelData()
-    GenerateInputData()
+    GenerateInputData(LPF, CUTOFF)
 
 
 def main():
@@ -95,7 +95,7 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
 
     # Calls to functions according to arguments
     if 'prepare_command' in args:
-        if args.prepare_command in ['envelope', 'input']:   # In case we need to use a low pass filter
+        if args.prepare_command in ['envelope', 'input', 'all']:   # In case we need to use a low pass filter
             PREPARE_FUNCTIONS[args.prepare_command](False if args.CUTOFF is None else True, args.CUTOFF)
         else:
             PREPARE_FUNCTIONS[args.prepare_command]()
