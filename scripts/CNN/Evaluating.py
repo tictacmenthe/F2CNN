@@ -21,7 +21,7 @@ from scripts.processing.PHNFileReader import ExtractPhonemes
 from .Training import normalizeInput
 
 def EvaluateOneWavArray(wavArray, framerate, wavFileName,  keras, CENTER_FREQUENCIES=None,
-                       FILTERBANK_COEFFICIENTS=None):
+                       FILTERBANK_COEFFICIENTS=None, title=None):
 
     # #### READING CONFIG FILE
     config = ConfigParser()
@@ -71,7 +71,7 @@ def EvaluateOneWavArray(wavArray, framerate, wavFileName,  keras, CENTER_FREQUEN
     del input_data
 
     print("Plotting...")
-    PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES, phonemes, formants, wavFileName)
+    PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES, phonemes, formants, title)
 
     del envelopes
     del phonemes
@@ -146,6 +146,6 @@ def EvaluateWithNoise(wavFileName, keras, CENTER_FREQUENCIES=None,
     print("File:\t\t{}".format(wavFileName))
     framerate, wavList = GetArrayFromWAV(wavFileName)
     noise=numpy.random.normal(wavList.mean(), wavList.max()/100, wavList.shape[0])
-    output=0.5*noise+0.5*wavList
-    EvaluateOneWavArray(wavList, framerate, wavFileName, keras, CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS)
+    output=noise+wavList
+    EvaluateOneWavArray(output, framerate, wavFileName, keras, CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS, os.path.split(wavFileName)[1]+'.WHITENOISE.png')
     print("\t\t{}\tdone !".format(wavFileName))

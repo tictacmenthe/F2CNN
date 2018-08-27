@@ -69,7 +69,7 @@ def moveFilesToPosition(vtrFileNames, timitFileNames):
                 print("TO\t", dst + ".FB\n")
                 copyfile(fbsrc+".fb", dst+".FB")
                 count+=1
-    print(count)
+    print(count, "files reorganized")
 
 
 def OrganiseAllFiles():

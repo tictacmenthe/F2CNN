@@ -13,7 +13,7 @@ from scipy.stats import pearsonr
 from scripts.plotting.PlottingProcessing import ReshapeEnvelopesForSpectrogram
 
 
-def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES, phonemes, Formants=None, title=""):
+def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES, phonemes, Formants=None, title=None):
     image = ReshapeEnvelopesForSpectrogram(envelopes, CENTER_FREQUENCIES)
     formant = []
     # fig = plt.figure()
@@ -81,7 +81,7 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES
     if phonemes is not None:
         for phoneme, start, end in phonemes:
             axproba.axvline(end / 16000, color="xkcd:olive", linewidth=1)
-            axproba.text((end + start) / 32000, mini - 0.12 * (maxi - mini), phoneme, fontsize=8,
+            axproba.text((end + start) / 32000, mini - 0.12 * (maxi - mini), phoneme, fontsize=10,
                          horizontalalignment='center', verticalalignment='top', weight='bold')
 
     # GetLabelsFromFile('resources/f2cnn/TEST/DR1.FELC0.SX216.WAV')
@@ -100,10 +100,10 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES
     plt.annotate('Rising', xy=(0,1.0), xytext=(-0.05*xlim[1],1.1), arrowprops=dict(facecolor='black', shrink=0.01))
     plt.annotate('Falling', xy=(0,0.0), xytext=(-0.05*xlim[1],-0.1), arrowprops=dict(facecolor='black', shrink=0.01))
 
-    plt.title(title)
+    plt.title(title if title is not None else "")
     figMgr = plt.get_current_fig_manager()
     figMgr.resize(*figMgr.window.maxsize())
     # plt.show(fig)
-    plt.savefig(join("graphs", "FallingOrRising", "FallingOrRising." + split(title)[1] + ".png"),
+    plt.savefig(join("graphs", "FallingOrRising" if title is None else title),
                 dpi=100)
     plt.close(fig)

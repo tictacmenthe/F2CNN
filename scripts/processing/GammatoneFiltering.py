@@ -33,9 +33,9 @@ def GetArrayFromWAV(filename):
     else:                   # NIST header, which uses SPHERE
         file=SPHFile(filename)
         framerate = file.format['sample_rate']
-        wavArray=[]
-        for i in file.time_range():
-            wavArray.append(i)
+        wavArray=numpy.zeros(len(file.time_range()), dtype=numpy.int16)
+        for i, value in enumerate(file.time_range()):
+            wavArray[i]=value
     return framerate, wavArray
 
 
