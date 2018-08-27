@@ -17,7 +17,8 @@ from multiprocessing.pool import Pool
 from os.path import splitext, join, split
 
 import numpy
-from scipy.io import wavfile as WavFileReader
+from scipy.io import wavfile as WavFileTool
+from sphfile import SPHFile
 
 from gammatone import filters
 
@@ -25,7 +26,16 @@ counter = None
 
 
 def GetArrayFromWAV(filename):
-    framerate, wavArray = WavFileReader.read(filename)
+    with open(filename, 'rb') as wavFile:
+        header=wavFile.read(4)
+    if header == b'RIFF':   # RIFF header, for WAVE files
+        framerate, wavArray = WavFileTool.read(filename)
+    else:                   # NIST header, which uses SPHERE
+        file=SPHFile(filename)
+        framerate = file.format['sample_rate']
+        wavArray=[]
+        for i in file.time_range():
+            wavArray.append(i)
     return framerate, wavArray
 
 

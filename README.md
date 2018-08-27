@@ -51,12 +51,13 @@ project_root/\
 **--VTR/**      -> VTR FORMANTS files as is, **including TEST and TRAIN subdirectories**\
 So make sure to put the TIMIT(the one including TEST and TRAIN directories) and VTR directories in the resources directory.
 ### Dependencies
-
+Only linux is supported currently.
 This project requires the installation of:
 - numpy - 1.14.5
 - matplotlib - 2.2.2
 - keras - 2.2.0
 - scipy - 1.1.0
+- sphfile - 1.0.0
 Also, some packages are needed for the training:
 There are two cases:
 ##### 1. You will use your CPU

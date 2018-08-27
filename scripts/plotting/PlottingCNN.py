@@ -3,6 +3,7 @@
 """
 
 from configparser import ConfigParser
+from os.path import join, split
 
 import matplotlib.pyplot as plt
 import numpy
@@ -96,13 +97,13 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES
     axproba.axhline(1.0)
     xlim=axproba.get_xlim()
 
-    plt.annotate('Rising', xy=(0,1.0), xytext=(-0.1*xlim[1],1.2), arrowprops=dict(facecolor='black', shrink=0.01))
-    plt.annotate('Falling', xy=(0,0.0), xytext=(-0.1*xlim[1],-0.2), arrowprops=dict(facecolor='black', shrink=0.01))
+    plt.annotate('Rising', xy=(0,1.0), xytext=(-0.05*xlim[1],1.1), arrowprops=dict(facecolor='black', shrink=0.01))
+    plt.annotate('Falling', xy=(0,0.0), xytext=(-0.05*xlim[1],-0.1), arrowprops=dict(facecolor='black', shrink=0.01))
 
     plt.title(title)
     figMgr = plt.get_current_fig_manager()
     figMgr.resize(*figMgr.window.maxsize())
     # plt.show(fig)
-    plt.savefig(os.path.join("graphs", "FallingOrRising", "FallingOrRising." + os.path.split(title)[1] + ".png"),
+    plt.savefig(join("graphs", "FallingOrRising", "FallingOrRising." + split(title)[1] + ".png"),
                 dpi=100)
     plt.close(fig)

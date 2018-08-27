@@ -7,7 +7,7 @@ from scripts.processing.EnvelopeExtraction import ExtractAllEnvelopes
 from scripts.processing.LabelDataGenerator import GenerateLabelData
 from scripts.processing.InputGenerator import GenerateInputData
 from scripts.plotting.PlottingProcessing import PlotEnvelopesAndF2FromFile
-from scripts.CNN.Evaluating import EvaluateOneFile, EvaluateRandom
+from scripts.CNN.Evaluating import EvaluateOneWavFile, EvaluateRandom, EvaluateWithNoise
 from scripts.CNN.Training import TrainAndPlotLoss
 
 
@@ -35,7 +35,8 @@ def main():
 
     CNN_FUNCTIONS = {
         'train': TrainAndPlotLoss,
-        'eval': EvaluateOneFile,  # Applies the CNN to one specified file
+        'eval': EvaluateOneWavFile,  # Applies the CNN to one specified file
+        'evalnoise': EvaluateWithNoise,  # Applies the CNN to one specified file
         'evalrand': EvaluateRandom
     }
 
@@ -92,7 +93,6 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
     # Processes the input arguments
     args = parser.parse_args()
     print(args)
-
     # Calls to functions according to arguments
     if 'prepare_command' in args:
         if args.prepare_command in ['envelope', 'input', 'all']:  # In case we need to use a low pass filter
@@ -105,7 +105,6 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
         else:
             print("Plotting for file {}...".format(args.file))
             PlotEnvelopesAndF2FromFile(args.file)
-
     elif 'cnn_command' in args:
         if args.cnn_command == 'eval':
             if args.file is not None:
@@ -113,11 +112,21 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
                 import keras
                 evalArgs.append(args.file)
                 evalArgs.append(keras)
-                if args.CUTOFF is not None:
+                if 'CUTOFF' in args:
                     evalArgs.append(True)
                     evalArgs.append(args.CUTOFF)
-                print(evalArgs)
-                exit()
+                CNN_FUNCTIONS[args.cnn_command](*evalArgs)
+            else:
+                print("Please use --file or -f command to give an input file")
+        elif args.cnn_command == 'evalnoise':
+            if args.file is not None:
+                evalArgs = []
+                import keras
+                evalArgs.append(args.file)
+                evalArgs.append(keras)
+                if 'CUTOFF' in args:
+                    evalArgs.append(True)
+                    evalArgs.append(args.CUTOFF)
                 CNN_FUNCTIONS[args.cnn_command](*evalArgs)
             else:
                 print("Please use --file or -f command to give an input file")

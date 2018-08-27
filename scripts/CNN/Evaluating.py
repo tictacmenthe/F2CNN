@@ -10,6 +10,7 @@ import time
 from configparser import ConfigParser
 
 import numpy
+from matplotlib import pyplot
 
 from gammatone import filters
 from scripts.plotting.PlottingCNN import PlotEnvelopesAndCNNResultsWithPhonemes
@@ -19,28 +20,13 @@ from scripts.processing.GammatoneFiltering import GetArrayFromWAV, GetFilteredOu
 from scripts.processing.PHNFileReader import ExtractPhonemes
 from .Training import normalizeInput
 
-
-def EvaluateOneFile(wavFileName, keras, CENTER_FREQUENCIES=None,
-                    FILTERBANK_COEFFICIENTS=None):
-    """
-    Evaluates one .WAV file with the keras model 'last_trained_model'.
-    The model should take an input of Nx11x128x1, N being the number of frames in the file, minus the first and last 0.055ms.
-    Its output should be two categories, the first one is 'falling', the second 'rising'.
-    Produces graphs showing envelope amplitudes, formant frequency if an .FB file is available, results of the model.
-    :param keras: variable allowing usage of the keras module
-    :param wavFileName: Path to the .WAV file used. If VTR Formants are used, the corresponding .FB file should have the same basename and be in the same directory.
-    :param CENTER_FREQUENCIES: (OPTIONAL) Center frequencies of the gammatone filterbank, used for filtering, and also for plotting a spectrogram like figure.
-    :param FILTERBANK_COEFFICIENTS: (OPTIONAL) Coefficients of the gammatone filterbank. Should be constructed with the gammatone library's 'gammatone.filters.make_erb.filters' function.
-    """
-
-    print("File:\t\t{}".format(wavFileName))
+def EvaluateOneWavArray(wavArray, framerate, wavFileName,  keras, CENTER_FREQUENCIES=None,
+                       FILTERBANK_COEFFICIENTS=None):
 
     # #### READING CONFIG FILE
     config = ConfigParser()
     config.read('F2CNN.conf')
     ustos = 1 / 1000000.
-
-    framerate, wavList = GetArrayFromWAV(wavFileName)
 
     if CENTER_FREQUENCIES is None:
         nchannels = config.getint('FILTERBANK', 'NCHANNELS')
@@ -52,7 +38,8 @@ def EvaluateOneFile(wavFileName, keras, CENTER_FREQUENCIES=None,
         FILTERBANK_COEFFICIENTS = filters.make_erb_filters(framerate, CENTER_FREQUENCIES)
 
     print("Applying filterbank...")
-    filtered = GetFilteredOutputFromArray(wavList, FILTERBANK_COEFFICIENTS)
+    filtered = GetFilteredOutputFromArray(wavArray, FILTERBANK_COEFFICIENTS)
+    del wavArray
     print("Extracting Envelope...")
     envelopes = ExtractEnvelopeFromMatrix(filtered)
     del filtered
@@ -89,6 +76,25 @@ def EvaluateOneFile(wavFileName, keras, CENTER_FREQUENCIES=None,
     del envelopes
     del phonemes
     keras.backend.clear_session()
+
+
+def EvaluateOneWavFile(wavFileName, keras, CENTER_FREQUENCIES=None,
+                       FILTERBANK_COEFFICIENTS=None):
+    """
+    Evaluates one .WAV file with the keras model 'last_trained_model'.
+    The model should take an input of Nx11x128x1, N being the number of frames in the file, minus the first and last 0.055ms.
+    Its output should be two categories, the first one is 'falling', the second 'rising'.
+    Produces graphs showing envelope amplitudes, formant frequency if an .FB file is available, results of the model.
+    :param keras: variable allowing usage of the keras module
+    :param wavFileName: Path to the .WAV file used. If VTR Formants are used, the corresponding .FB file should have the same basename and be in the same directory.
+    :param CENTER_FREQUENCIES: (OPTIONAL) Center frequencies of the gammatone filterbank, used for filtering, and also for plotting a spectrogram like figure.
+    :param FILTERBANK_COEFFICIENTS: (OPTIONAL) Coefficients of the gammatone filterbank. Should be constructed with the gammatone library's 'gammatone.filters.make_erb.filters' function.
+    """
+
+    print("File:\t\t{}".format(wavFileName))
+    framerate, wavArray = GetArrayFromWAV(wavFileName)
+    EvaluateOneWavArray(wavArray, framerate, wavFileName, keras, CENTER_FREQUENCIES,
+                       FILTERBANK_COEFFICIENTS)
     print("\t\t{}\tdone !".format(wavFileName))
 
 
@@ -127,9 +133,19 @@ def EvaluateRandom(testMode=False):
 
     numpy.random.shuffle(wavFiles)
     for file in wavFiles:
-        EvaluateOneFile(file, keras, CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS)
+        EvaluateOneWavFile(file, keras, CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS)
         # We give keras to avoid importing it for every file, and avoid importing it globally as it slows application startup
 
     print("Evaluating network on all files.")
     print('              Total time:', time.time() - TotalTime)
     print('')
+
+
+def EvaluateWithNoise(wavFileName, keras, CENTER_FREQUENCIES=None,
+                    FILTERBANK_COEFFICIENTS=None):
+    print("File:\t\t{}".format(wavFileName))
+    framerate, wavList = GetArrayFromWAV(wavFileName)
+    noise=numpy.random.normal(wavList.mean(), wavList.max()/100, wavList.shape[0])
+    output=0.5*noise+0.5*wavList
+    EvaluateOneWavArray(wavList, framerate, wavFileName, keras, CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS)
+    print("\t\t{}\tdone !".format(wavFileName))
