@@ -89,6 +89,6 @@ def GenerateInputData(LPF=False, CUTOFF=100):
 
     print("Saving {}...".format(savePath))
     numpy.save(savePath, inputData)
-    numpy.save('last_input_data.npy', inputData) # make a backup of the last generated, just in case
+    numpy.save(join('trainingData','last_input_data.npy'), inputData) # make a backup of the last generated, just in case
     print('                Total time:', time.time() - TotalTime)
     print('')

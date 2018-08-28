@@ -15,41 +15,46 @@ from scripts.plotting.PlottingProcessing import ReshapeEnvelopesForSpectrogram
 
 def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES, phonemes, Formants=None, title=None):
     image = ReshapeEnvelopesForSpectrogram(envelopes, CENTER_FREQUENCIES)
+
+    # #### READING CONFIG FILE
+    config = ConfigParser()
+    config.read('F2CNN.conf')
+    framerate = config.getint('FILTERBANK', 'FRAMERATE')
+    radius = config.getint('CNN', 'RADIUS')
+    sampPeriod = config.getint('CNN', 'sampperiod') / 1000000
+    FORMANT = config.getint('CNN', 'FORMANT')
+    dotsperinput = radius * 2 + 1
+
     formant = []
     # fig = plt.figure()
     fig = plt.figure(figsize=(32,16))
     aximg = fig.add_subplot(211)
     axproba = fig.add_subplot(212)
-    axproba.axis([0, len(image[0]) / 16000, -1.6, 1.6])
+    axproba.axis([0, len(image[0]) / framerate, -1.6, 1.6])
 
-    aximg.imshow(image, norm=LogNorm(), aspect="auto", extent=[0, len(envelopes[0]) / 16000., 100, 7795])
+    aximg.imshow(image, norm=LogNorm(), aspect="auto", extent=[0, len(envelopes[0]) / framerate, 100, framerate/2])
     aximg.autoscale(False)
     if Formants is not None:
-        for j in range(len(Formants)):
-            formant.append(Formants[j][1])
-
-        # #### READING CONFIG FILE
-        config = ConfigParser()
-        config.read('F2CNN.conf')
-        radius = config.getint('CNN', 'RADIUS')
-        sampPeriod = config.getint('CNN', 'sampperiod') / 1000000
         pvalues = []
+
+        for j in range(len(Formants)):
+            formant.append(Formants[j][FORMANT-1])
 
         # Discretization of the values for each entry required
         slopes = []
         xformant = [i * sampPeriod for i in range(len(formant))]
-        aximg.plot(xformant, formant, 'k-', label='F{} Frequencies (Hz)'.format(2))
+        aximg.plot(xformant, formant, 'k-', label='F{} Frequencies (Hz)'.format(FORMANT))
         for centerDot in range(radius, len(formant) - radius, 1):
-            currentDots = numpy.array([formant[centerDot + (k - 5)] for k in range(11)])
-            x = numpy.array([xformant[centerDot + (k - 5)] * 16000 for k in range(11)])
+            currentDots = numpy.array([formant[centerDot + (k - radius)] for k in range(dotsperinput)])
+            x = numpy.array([xformant[centerDot + (k - radius)] * framerate for k in range(dotsperinput)])
             A = numpy.vstack([x, numpy.ones(len(x))]).T
             [a, b], _, _, _ = numpy.linalg.lstsq(A, currentDots, rcond=None)
             r, p = pearsonr(currentDots, a * x + b)
             slopes.append(a)
             pvalues.append(p)
 
-        axproba.plot(xformant[5:-5], [numpy.arctan(slope) for slope in slopes], 'g', label='Arctan(F2\')')
-        axproba.plot(xformant[5:-5], pvalues, 'r', label='p-values of slopes')
+        axproba.plot(xformant[radius:-radius], [numpy.arctan(slope) for slope in slopes], 'g', label='Arctan(F{}\')'.format(FORMANT))
+        axproba.plot(xformant[radius:-radius], pvalues, 'r', label='p-values of slopes')
 
     # Extraction and plotting of rising/falling results
     cnnRising, cnnFalling, cnnNone, pRising = [], [], [], []

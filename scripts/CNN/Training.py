@@ -62,7 +62,7 @@ def TrainAndPlotLoss(inputFile=None):
     # input image dimensions
     img_rows, img_cols = config.getint('CNN', 'RADIUS')*2+1, config.getint('FILTERBANK', 'NCHANNELS')  # 11x128 default
 
-    inputPath = inputFile or join('trainingData', 'input_data.npy')  # default file if none provided
+    inputPath = inputFile or join('trainingData', 'last_input_data.npy')  # default file if none provided
     labelPath = join('trainingData', 'label_data.csv')
 
     x_test, y_test, x_train, y_train = SeparateTestTrain(inputPath, labelPath)

@@ -8,10 +8,11 @@ import glob
 import os
 import time
 from configparser import ConfigParser
+from struct import unpack
 
 import numpy
 from matplotlib import pyplot
-
+from scipy.io import wavfile
 from gammatone import filters
 from scripts.plotting.PlottingCNN import PlotEnvelopesAndCNNResultsWithPhonemes
 from scripts.processing.EnvelopeExtraction import ExtractEnvelopeFromMatrix
@@ -20,9 +21,9 @@ from scripts.processing.GammatoneFiltering import GetArrayFromWAV, GetFilteredOu
 from scripts.processing.PHNFileReader import ExtractPhonemes
 from .Training import normalizeInput
 
-def EvaluateOneWavArray(wavArray, framerate, wavFileName,  keras, CENTER_FREQUENCIES=None,
-                       FILTERBANK_COEFFICIENTS=None, title=None):
 
+def EvaluateOneWavArray(wavArray, framerate, wavFileName, keras, CENTER_FREQUENCIES=None,
+                        FILTERBANK_COEFFICIENTS=None, title=None):
     # #### READING CONFIG FILE
     config = ConfigParser()
     config.read('F2CNN.conf')
@@ -94,7 +95,7 @@ def EvaluateOneWavFile(wavFileName, keras, CENTER_FREQUENCIES=None,
     print("File:\t\t{}".format(wavFileName))
     framerate, wavArray = GetArrayFromWAV(wavFileName)
     EvaluateOneWavArray(wavArray, framerate, wavFileName, keras, CENTER_FREQUENCIES,
-                       FILTERBANK_COEFFICIENTS)
+                        FILTERBANK_COEFFICIENTS)
     print("\t\t{}\tdone !".format(wavFileName))
 
 
@@ -142,10 +143,16 @@ def EvaluateRandom(testMode=False):
 
 
 def EvaluateWithNoise(wavFileName, keras, CENTER_FREQUENCIES=None,
-                    FILTERBANK_COEFFICIENTS=None):
+                      FILTERBANK_COEFFICIENTS=None):
     print("File:\t\t{}".format(wavFileName))
     framerate, wavList = GetArrayFromWAV(wavFileName)
-    noise=numpy.random.normal(wavList.mean(), wavList.max()/100, wavList.shape[0])
-    output=noise+wavList
-    EvaluateOneWavArray(output, framerate, wavFileName, keras, CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS, os.path.split(wavFileName)[1]+'.WHITENOISE.png')
+    noise = numpy.random.normal(wavList.mean(), wavList.max()/50, wavList.shape[0])
+    output = noise + wavList
+    pyplot.plot(wavList, '.')
+    pyplot.plot(output, '.')
+    wavfile.write('TESTNOISE.WAV', framerate, output)
+    pyplot.show()
+
+    EvaluateOneWavArray(output, framerate, wavFileName, keras, CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS,
+                        os.path.split(wavFileName)[1] + '.WHITENOISE.png')
     print("\t\t{}\tdone !".format(wavFileName))

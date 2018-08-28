@@ -1,11 +1,12 @@
 from configparser import ConfigParser
 
+formant = input('What will you be working on ? Enter k for Fk the formant that is used(default 2):') or '2'
 framerate = input('Enter the working framerate(default 16000):') or '16000'
 nchannels = input('Enter the number of filterbank channels(default 128):') or '128'
 lowcutoff = input('Enter the low cutoff frequency(default 100):') or '100'
 sampPeriod = input('Enter the label database sampling period(default 10000):') or '10000'
 classes = input(
-    'How many input labels should there be? \n\t\t2:rising and falling\n\t\t3:falling, rising, none)\nChoice:(default 2)') or '2'
+    'How many input labels should there be? \n\t\t2:rising and falling\n\t\t3:falling, rising, none\nChoice:(default 2)') or '2'
 inputRadius = input(
     'Enter the CNN input radius(frames used will be between i+-radius*samplitperiod of .FB files)(default 5 values):') or '5'
 batchsize = input('Enter the CNN batch size(default 32):') or '32'
@@ -20,6 +21,7 @@ parser['FILTERBANK']['NCHANNELS'] = nchannels
 parser['FILTERBANK']['LOW'] = lowcutoff
 
 parser.add_section('CNN')
+parser['CNN']['FORMANT'] = formant
 parser['CNN']['CLASSES'] = classes
 parser['CNN']['RADIUS'] = inputRadius
 parser['CNN']['BATCHSIZE'] = batchsize

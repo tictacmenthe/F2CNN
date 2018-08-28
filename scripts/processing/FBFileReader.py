@@ -58,29 +58,40 @@ def ExtractFBFile(fbFilename, verbose=False):
         return None, 0
 
 
+def GetFormantFrequencies(fbFilename, formant):
+    """
+    Extracts de formant F_formant's frequencies from data of VTR formants database
+    :param fbFilename:  path to the .FB file used
+    :param formant: index of the formant(1-4)
+    :return: Array of F_formant frequencies in Hz, and the sample period of the file
+    """
+    matrix, sampPeriod = ExtractFBFile(fbFilename)
+    return matrix[:,formant-1], sampPeriod
+
+
 def GetF2Frequencies(fbFilename):
     """
     Extracts the F2 formant from data of VTR formants database
     :param fbFilename: path to the file to be used
     :return: array of F2 frequencies in Hz, and the sample period of the file
     """
-    matrix, sampPeriod = ExtractFBFile(fbFilename)
-    return matrix[:, 1], sampPeriod
+    return GetFormantFrequencies(fbFilename, 2)
 
 
-def GetF2FrequenciesAround(array, timepoint, radius):
+def GetFromantFrequenciesAround(array, timepoint, radius, wavToFormant):
     """
-    Gets the values of F2 frequencies around a frame in an F2 formant data Array
-    :param array: array of values built with function GetF2Frequencies
+    Gets the values of frequencies around a frame in a formant data Array
+    :param array: array of values built with function GetFormantFrequencies
     :param timepoint: center frame to consider
     :param radius: radius used to get values at timepoint+-radius
+    :param wavToFormant: ratio of framerate of wav file and sampling rate of formant
     :return: array of radius*2 + 1 frequencies
     """
-    start, end = timepoint / 160 - radius, timepoint / 160 + radius
+    start, end = timepoint / wavToFormant - radius, timepoint / wavToFormant + radius
     start, end = int(start), int(end) + 1
     if start < 0 or end >= len(array):
-        print("ERROR: WRONG RANGE IN GETF2FREQUENCIESAROUND IN ARRAY OF LEN:\n", len(array), "\nAT TIME AND RADIUS", timepoint,
-              radius, start, end)
+        print("ERROR: WRONG RANGE IN GETFORMANTFREQUENCIESAROUND IN ARRAY OF LEN:\n", len(array), "\nAT TIME AND RADIUS", timepoint,
+              radius,"START",start,"END",end)
         if start<0:
             print("INF")
         elif end>=len(array):

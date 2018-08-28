@@ -15,15 +15,8 @@ import numpy
 from scipy.stats import pearsonr
 
 from scripts.processing.GammatoneFiltering import GetArrayFromWAV
-from .FBFileReader import GetF2Frequencies, GetF2FrequenciesAround
+from .FBFileReader import GetFromantFrequenciesAround, GetFormantFrequencies
 from .PHNFileReader import ExtractPhonemes, SILENTS, GetPhonemeFromArrayAt
-
-
-def GetLabelsFromFile(filename):
-    testOrTrain, filename = split(filename)
-    testOrTrain = split(testOrTrain)[1]
-    region, speaker, sentence = splitext(filename)[0].split('.')
-    print(testOrTrain, region, speaker, sentence)
 
 
 def GenerateLabelData():
@@ -34,6 +27,7 @@ def GenerateLabelData():
     config.read('F2CNN.conf')
     RADIUS = config.getint('CNN', 'RADIUS')
     RISK = config.getfloat('CNN', 'RISK')
+    FORMANT = config.getint('CNN', 'FORMANT')
     NUMCLASSES = config.getfloat('CNN', 'CLASSES')
     SAMPPERIOD = config.getint('CNN', 'SAMPPERIOD')
     dotsperinput = RADIUS * 2 + 1
@@ -54,17 +48,18 @@ def GenerateLabelData():
     nfiles = len(filenames)
     print(nfiles, "files found")
 
-    vowelCounter = 0
+    linesCounter = 0
     csvLines = []
 
     # Get the data into a list of lists for the CSV
     for i, file in enumerate(filenames):
         print("Reading:\t{:<50}\t{}/{}".format(file, i, nfiles))
         # Load the F2 values of the file
-        F2Array, _ = GetF2Frequencies(splitext(file)[0] + '.FB')
+        FormantArray, _ = GetFormantFrequencies(splitext(file)[0] + '.FB', FORMANT)
         phonemes = ExtractPhonemes(splitext(file)[0] + '.PHN')
         # Get number of points
         framerate, wavList = GetArrayFromWAV(file)
+        wavToFormant=framerate*SAMPPERIOD*ustos
         nf = len(wavList)
         nb = int(nf / (framerate * SAMPPERIOD * ustos) - dotsperinput - 1)
 
@@ -76,32 +71,34 @@ def GenerateLabelData():
         STEP = int(framerate * SAMPPERIOD * ustos)
         START = int(STEP * RADIUS)
         steps = [START + k * STEP for k in range(nb)]
+
+        # Getting the data for each 'step'
         for step in steps:
-            phoneme = GetPhonemeFromArrayAt(phonemes, step)
-            if phoneme in SILENTS:
+            phoneme = GetPhonemeFromArrayAt(phonemes, step)     # Extraction of the required phonemes
+            if phoneme in SILENTS:                              # Silent category of phonemes will be ignored
                 continue
-            if not phoneme:
+            if not phoneme:                                     # End case: there is no phoneme to be read
                 break
             entry = [testOrTrain, region, speaker, sentence, phoneme, step]
-            F2Values = numpy.array(GetF2FrequenciesAround(F2Array, step, RADIUS))
+            FormantValues = numpy.array(GetFromantFrequenciesAround(FormantArray, step, RADIUS, wavToFormant))
 
             # Least Squares Method for linear regression of the F2 values
             x = numpy.array([step + (k - 5) * STEP for k in range(dotsperinput)])
             A = numpy.vstack([x, numpy.ones(len(x))]).T
-            [a, b], _, _, _ = numpy.linalg.lstsq(A, F2Values, rcond=None)
+            [a, b], _, _, _ = numpy.linalg.lstsq(A, FormantValues, rcond=None)
             # Pearson Correlation Coefficient r and p-value p using scipy.stats.pearsonr
-            r, p = pearsonr(F2Values, a * x + b)
+            r, p = pearsonr(FormantValues, a * x + b)
             # We round them up at 5 digits after the comma
             entry.append(round(a, 5))
             entry.append(round(p, 5))
             # The line to be added to the CSV file, only if the direction of the formant is clear enough (% risk)
 
             if p < RISK:
-                vowelCounter += 1
+                linesCounter += 1
                 entry.append(1 if a > 0 else 0)
                 csvLines.append(entry)
             elif NUMCLASSES == 3:
-                vowelCounter += 1
+                linesCounter += 1
                 entry.append(2)
                 csvLines.append(entry)
 
@@ -113,14 +110,6 @@ def GenerateLabelData():
         writer = csv.writer(outputFile)
         for line in csvLines:
             writer.writerow(line)
-    print("Generated Label Data CSV of", vowelCounter, "lines.")
+    print("Generated Label Data CSV of", linesCounter, "lines.")
     print('                Total time:', time.time() - TotalTime)
     print('')
-
-
-"""
-
-TRAIN/DR3.MDTB0.SX210.ENV1.npy
-TRAIN/DR4.MTRC0.SI1623.ENV1.npy
-
-"""
