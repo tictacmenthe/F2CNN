@@ -39,6 +39,7 @@ def moveFilesToPosition(vtrFileNames, timitFileNames):
     """
     # Get the WAV files from timit
     count=0
+    notfound=0
     for timitFile in timitFileNames:
         for vtrFile in vtrFileNames:
             if timitFile[-2].upper()==vtrFile[-2].upper() and timitFile[-1].upper()==vtrFile[-1].upper():
@@ -46,30 +47,50 @@ def moveFilesToPosition(vtrFileNames, timitFileNames):
                 dst=join('resources', 'f2cnn', timitFile[-4].upper(), ".".join([timitFile[-3].upper(), timitFile[-2].upper(), timitFile[-1].upper()]))
 
                 print("ENTRY:\t", src)
-                print("\t Copying WAV file...")
-                print("FROM\t", src+".WAV")
-                print("TO\t", dst+".WAV")
-                copyfile(src+".WAV", dst+".WAV")
-                count+=1
+                try:
+                    copyfile(src+".WAV", dst+".WAV")
+                    count+=1
+                except FileNotFoundError:
+                    print('ERROR: FILENOTFOUND DURING')
+                    print("\t Copying WAV file")
+                    print("FROM\t", src+".WAV")
+                    print("TO\t", dst+".WAV")
+                    notfound+=1
 
-                print("\t Copying PHN file...")
-                print("FROM\t", src + ".PHN")
-                print("TO\t", dst + ".PHN")
-                copyfile(src+".PHN", dst+".PHN")
-                count+=1
+                try:
+                    copyfile(src+".PHN", dst+".PHN")
+                    count+=1
+                except FileNotFoundError:
+                    print('ERROR: FILENOTFOUND DURING')
+                    print("\t Copying PHN file")
+                    print("FROM\t", src + ".PHN")
+                    print("TO\t", dst + ".PHN")
+                    notfound+=1
 
-                print("\t Copying WRD file...")
-                print("FROM\t", src + ".WRD")
-                print("TO\t", dst + ".WRD")
-                copyfile(src+".WRD", dst+".WRD")
-                count+=1
+                try:
+                    copyfile(src+".WRD", dst+".WRD")
+                    count+=1
+                except FileNotFoundError:
+                    print('ERROR: FILENOTFOUND DURING')
+                    print("\t Copying WRD file")
+                    print("FROM\t", src + ".WRD")
+                    print("TO\t", dst + ".WRD")
+                    notfound+=1
+
                 fbsrc=join('resources', 'VTR', vtrFile[-4], vtrFile[-3], vtrFile[-2], vtrFile[-1])
-                print("\t Copying FB file...")
-                print("FROM\t", fbsrc + ".fb")
-                print("TO\t", dst + ".FB\n")
-                copyfile(fbsrc+".fb", dst+".FB")
-                count+=1
-    print(count, "files reorganized")
+                try:
+                    copyfile(fbsrc+".fb", dst+".FB")
+                    count+=1
+                except FileNotFoundError:
+                    print('ERROR: FILENOTFOUND DURING')
+                    print("\t Copying FB file")
+                    print("FROM\t", fbsrc + ".fb")
+                    print("TO\t", dst + ".FB\n")
+                    notfound+=1
+
+    print(count, "files reorganized.")
+    if notfound>0:
+        print(notfound,"files not found.")
 
 
 def OrganiseAllFiles():

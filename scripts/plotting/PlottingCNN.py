@@ -109,6 +109,5 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES
     figMgr = plt.get_current_fig_manager()
     figMgr.resize(*figMgr.window.maxsize())
     # plt.show(fig)
-    plt.savefig(join("graphs", "FallingOrRising" if title is None else title),
-                dpi=100)
+    plt.savefig(join("graphs", split(title)[1])+'.png',dpi=100)
     plt.close(fig)
