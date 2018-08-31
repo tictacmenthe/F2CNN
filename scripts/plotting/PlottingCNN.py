@@ -3,7 +3,8 @@
 """
 
 from configparser import ConfigParser
-from os.path import join, split
+from os import makedirs
+from os.path import join, split, isdir
 
 import matplotlib.pyplot as plt
 import numpy
@@ -13,7 +14,7 @@ from scipy.stats import pearsonr
 from scripts.plotting.PlottingProcessing import ReshapeEnvelopesForSpectrogram
 
 
-def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES, phonemes, Formants=None, title=None):
+def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, accuracy, CENTER_FREQUENCIES, phonemes, Formants=None, title=None):
     image = ReshapeEnvelopesForSpectrogram(envelopes, CENTER_FREQUENCIES)
 
     # #### READING CONFIG FILE
@@ -105,9 +106,14 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, CENTER_FREQUENCIES
     plt.annotate('Rising', xy=(0,1.0), xytext=(-0.05*xlim[1],1.1), arrowprops=dict(facecolor='black', shrink=0.01))
     plt.annotate('Falling', xy=(0,0.0), xytext=(-0.05*xlim[1],-0.1), arrowprops=dict(facecolor='black', shrink=0.01))
 
+    axproba.text(0,mini-0.05*mini, "Accuracy: {}".format(accuracy))
+
     plt.title(title if title is not None else "")
     figMgr = plt.get_current_fig_manager()
     figMgr.resize(*figMgr.window.maxsize())
     # plt.show(fig)
-    plt.savefig(join("graphs", split(title)[1])+'.png',dpi=100)
+    if not isdir(join("graphs", "FallingOrRising")):
+        makedirs(join("graphs", "FallingOrRising"))
+
+    plt.savefig(join("graphs", "FallingOrRising", split(title)[1])+'.png',dpi=200)
     plt.close(fig)

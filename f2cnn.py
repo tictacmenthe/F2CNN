@@ -60,6 +60,7 @@ eval:\tEvaluates a keras model using one WAV file.\n\t\t
 evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\n\t\tMay be interrupted whenever, if needed.
     """
     fileHelpText = "Used to give a file path as an argument to some scripts."
+    modelHelpText = "Used to give the path to a keras model as an argument to some scripts."
 
     # #####  PARSING
     parser = argparse.ArgumentParser(description="F2CNN Project's entry script.",
@@ -87,6 +88,7 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
     parser_cnn = subparsers.add_parser('cnn', help='Commands related to training, testing and using the CNN.',
                                        formatter_class=argparse.RawTextHelpFormatter)
     parser_cnn.add_argument('--file', '-f', action='store', dest='file', nargs='?', help=fileHelpText)
+    parser_cnn.add_argument('--model', '-m', action='store', dest='model', nargs='?', help=fileHelpText)
     parser_cnn.add_argument('cnn_command', choices=CNN_FUNCTIONS.keys(), help=cnnHelpText)
     parser_cnn.add_argument('--count', '-c', action='store', type=int, help="Number of files to be evaluated")
 
@@ -107,7 +109,7 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
             PlotEnvelopesAndF2FromFile(args.file)
     elif 'cnn_command' in args:
         if args.cnn_command == 'eval':
-            if args.file is not None:
+            if 'file' in args and args.file is not None:
                 evalArgs = []
                 import keras
                 evalArgs.append(args.file)
@@ -115,6 +117,8 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
                 if 'CUTOFF' in args:
                     evalArgs.append(True)
                     evalArgs.append(args.CUTOFF)
+                if 'model' in args and args.model is not None:
+                    evalArgs.append(args.model)
                 CNN_FUNCTIONS[args.cnn_command](*evalArgs)
             else:
                 print("Please use --file or -f command to give an input file")
