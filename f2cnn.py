@@ -91,7 +91,8 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
     parser_cnn.add_argument('--model', '-m', action='store', dest='model', nargs='?', help=fileHelpText)
     parser_cnn.add_argument('cnn_command', choices=CNN_FUNCTIONS.keys(), help=cnnHelpText)
     parser_cnn.add_argument('--count', '-c', action='store', type=int, help="Number of files to be evaluated")
-
+    parser_cnn.add_argument('--lpf', action='store', type=int, dest='CUTOFF', help="Use Low Pass Filtering on Input Data")
+    parser_cnn.add_argument('--noise','-n', action='store', type=float, dest='SNRdB', help="To use with evalnoise to give a SNR in dB.")
     # Processes the input arguments
     args = parser.parse_args()
     print(args)
@@ -110,28 +111,32 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
     elif 'cnn_command' in args:
         if args.cnn_command == 'eval':
             if 'file' in args and args.file is not None:
-                evalArgs = []
+                evalArgs = {}
                 import keras
-                evalArgs.append(args.file)
-                evalArgs.append(keras)
+                evalArgs['file']=args.file
+                evalArgs['keras']=keras
                 if 'CUTOFF' in args:
-                    evalArgs.append(True)
-                    evalArgs.append(args.CUTOFF)
+                    evalArgs['LPF']=True
+                    evalArgs['CUTOFF']=args.CUTOFF
                 if 'model' in args and args.model is not None:
-                    evalArgs.append(args.model)
-                CNN_FUNCTIONS[args.cnn_command](*evalArgs)
+                    evalArgs['model']=args.model
+                CNN_FUNCTIONS[args.cnn_command](**evalArgs)
             else:
                 print("Please use --file or -f command to give an input file")
         elif args.cnn_command == 'evalnoise':
             if args.file is not None:
-                evalArgs = []
+                evalArgs = {}
                 import keras
-                evalArgs.append(args.file)
-                evalArgs.append(keras)
+                evalArgs['file']=args.file
+                evalArgs['keras']=keras
                 if 'CUTOFF' in args:
-                    evalArgs.append(True)
-                    evalArgs.append(args.CUTOFF)
-                CNN_FUNCTIONS[args.cnn_command](*evalArgs)
+                    evalArgs['LPF']=True
+                    evalArgs['CUTOFF']=args.CUTOFF
+                if 'model' in args and args.model is not None:
+                    evalArgs['model']=args.model
+                if 'SNRdB' in args and args.SNRdB is not None:
+                    evalArgs['SNRdB']=args.SNRdB
+                CNN_FUNCTIONS[args.cnn_command](**evalArgs)
             else:
                 print("Please use --file or -f command to give an input file")
         elif args.cnn_command == 'train':

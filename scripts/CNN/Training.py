@@ -32,8 +32,6 @@ def SeparateTestTrain(pathToInput, pathToLabel):
     x = [[], []]
     y = [[], []]
     input_data = numpy.load(pathToInput)
-    print(input_data.shape)
-
     with open(pathToLabel, 'r') as labels:
         reader = csv.reader(labels)
         for i, (test, region, speaker, sentence, phoneme, timepoint, slope, pvalue, sign) in enumerate(reader):
@@ -57,7 +55,7 @@ def TrainAndPlotLoss(inputFile=None):
     config = ConfigParser()
     config.read('F2CNN.conf')
     batch_size = config.getint('CNN', 'BATCHSIZE')
-    num_classes = config.getint('CNN', 'CLASSES')
+    num_classes = 2
     epochs = config.getint('CNN', 'EPOCHS')
     # input image dimensions
     img_rows, img_cols = config.getint('CNN', 'RADIUS')*2+1, config.getint('FILTERBANK', 'NCHANNELS')  # 11x128 default
@@ -80,10 +78,8 @@ def TrainAndPlotLoss(inputFile=None):
 
     print('Rising test:', len([sign for sign in y_test if sign == 1]))
     print('Falling test:', len([sign for sign in y_test if sign == 0]))
-    print('None test:', len([sign for sign in y_test if sign == 2]))
     print('Rising train:', len([sign for sign in y_train if sign == 1]))
     print('Falling train:', len([sign for sign in y_train if sign == 0]))
-    print('None train:', len([sign for sign in y_train if sign == 2]))
 
     print(x_train.shape, 'train samples')
     print(x_test.shape, 'test samples')

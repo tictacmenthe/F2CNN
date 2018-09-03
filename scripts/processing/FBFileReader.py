@@ -10,13 +10,7 @@ The output is a numpy.ndarray of size 8*nb_frames, with bn_frames being one of t
 """
 
 import struct
-
 import numpy
-
-
-def printBytes(byteStr):
-    print(' '.join(hex(nb) for nb in byteStr))
-    print('\n')
 
 
 def ExtractFBFile(fbFilename, verbose=False):
@@ -66,16 +60,10 @@ def GetFormantFrequencies(fbFilename, formant):
     :return: Array of F_formant frequencies in Hz, and the sample period of the file
     """
     matrix, sampPeriod = ExtractFBFile(fbFilename)
-    return matrix[:,formant-1], sampPeriod
-
-
-def GetF2Frequencies(fbFilename):
-    """
-    Extracts the F2 formant from data of VTR formants database
-    :param fbFilename: path to the file to be used
-    :return: array of F2 frequencies in Hz, and the sample period of the file
-    """
-    return GetFormantFrequencies(fbFilename, 2)
+    if matrix is not None:
+        return matrix[:,formant-1], sampPeriod
+    else:
+        return None, None
 
 
 def GetFromantFrequenciesAround(array, timepoint, radius, wavToFormant):

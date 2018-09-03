@@ -58,15 +58,15 @@ def GenerateInputData(LPF=False, CUTOFF=100):
     # #### READING CONFIG FILE
     config = ConfigParser()
     config.read('F2CNN.conf')
-    radius = config.getint('CNN', 'RADIUS')
-    sampPeriod = config.getint('CNN', 'sampperiod')
-    framerate = config.getint('FILTERBANK', 'framerate')
-    nchannels = config.getint('FILTERBANK', 'nchannels')
-    dotsperinput = radius * 2 + 1
+    RADIUS = config.getint('CNN', 'RADIUS')
+    SAMPPERIOD = config.getint('CNN', 'sampperiod')
+    FRAMERATE = config.getint('FILTERBANK', 'framerate')
+    NCHANNELS = config.getint('FILTERBANK', 'nchannels')
+    DOTSPERINPUT = RADIUS * 2 + 1
 
-    inputData = numpy.zeros((totalTimePoints, dotsperinput, nchannels))
+    inputData = numpy.zeros((totalTimePoints, DOTSPERINPUT, NCHANNELS))
     print("Output shape:", inputData.shape)
-    STEP = int(framerate*sampPeriod/1000000)
+    STEP = int(FRAMERATE*SAMPPERIOD/1000000)
     currentEntry = 0
     for currentFileIndex, file in enumerate(files):
         timepoints=filesAndTimepointsDict[file]
@@ -75,8 +75,8 @@ def GenerateInputData(LPF=False, CUTOFF=100):
         envelopes = numpy.load(file)
         i=0
         for i, center in enumerate(timepoints):
-            entryMatrix = numpy.zeros((dotsperinput,nchannels))  # All the values for one entry(11 timepoints centered around center) : 11x128 matrix
-            for j, index in enumerate([center + STEP * (k - 5) for k in range(dotsperinput)]):
+            entryMatrix = numpy.zeros((DOTSPERINPUT,NCHANNELS))  # All the values for one entry(11 timepoints centered around center) : 11x128 matrix
+            for j, index in enumerate([center + STEP * (k - RADIUS) for k in range(DOTSPERINPUT)]):
                 valueArray = numpy.array([channel[index] for channel in envelopes])  # All the values of env at the steps' timepoint
                 entryMatrix[j]=valueArray
             inputData[currentEntry+i]=entryMatrix
@@ -85,7 +85,7 @@ def GenerateInputData(LPF=False, CUTOFF=100):
     inputData = numpy.array(inputData, dtype=numpy.float32)
     print('Generated Input Matrix of shape {}.'.format(inputData.shape))
 
-    savePath = 'trainingData/input_data_LPF{}.npy'.format(CUTOFF) if LPF else 'trainingData/input_data.npy'
+    savePath = join('trainingData', 'input_data_LPF{}.npy'.format(CUTOFF) if LPF else 'input_data.npy')
 
     print("Saving {}...".format(savePath))
     numpy.save(savePath, inputData)

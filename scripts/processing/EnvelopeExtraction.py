@@ -67,7 +67,7 @@ def ExtractEnvelopeFromMatrix(matrix, LPF=False, CUTOFF=100):
     return envelopes
 
 
-def ExtractEnvelope(gfbFileName, nbf, LPF=False, CUTOFF=100):
+def ExtractEnvelope(gfbFileName, LPF=False, CUTOFF=100):
     """
     Extracts 128 envelopes from the npy matrix stored in the parameter file
     :param LPF: boolean for whether or not using low pass filtering
@@ -79,14 +79,11 @@ def ExtractEnvelope(gfbFileName, nbf, LPF=False, CUTOFF=100):
     # Load the matrix
     matrix = numpy.load(gfbFileName)
     envelopes = ExtractEnvelopeFromMatrix(matrix, LPF, CUTOFF)
-    global counter
-    with counter.get_lock():
-        counter.value += 1
-        print("\t{:<50} done ! {}/{} Files.".format(gfbFileName, counter.value, nbf))
+
     return envelopes
 
 
-def SaveEnvelope(matrix, gfbFileName):
+def SaveEnvelope(matrix, gfbFileName, nbf):
     """
     Save the envelope matrix to a file with the extension .ENVx.npy, with x the method used(1,2,...)
     :param matrix: the (128 * nbframes) matrix of envelopes to be saved
@@ -96,7 +93,10 @@ def SaveEnvelope(matrix, gfbFileName):
     # Envelope file nane is NAME.ENV+METHOD NUMBER.npy (.ENV1,.ENV2...)
     envelopeFilename = splitext(splitext(gfbFileName)[0])[0] + ".ENV" + str(METHOD)
     numpy.save(envelopeFilename, matrix)
-
+    global counter
+    with counter.get_lock():
+        counter.value += 1
+        print("\t{:<50} done ! {}/{} Files.".format(envelopeFilename, counter.value, nbf))
 
 def ExtractAndSaveEnvelope(gfbFileName, nbf, LPF=False, CUTOFF=100):
     """
@@ -114,7 +114,8 @@ def ExtractAndSaveEnvelope(gfbFileName, nbf, LPF=False, CUTOFF=100):
     # else:
     #     saveName=gfbFileName
     # return
-    SaveEnvelope(ExtractEnvelope(gfbFileName, nbf, LPF, CUTOFF), saveName)
+    SaveEnvelope(ExtractEnvelope(gfbFileName, LPF, CUTOFF), saveName, nbf)
+
 
 
 def InitProcesses(cn):

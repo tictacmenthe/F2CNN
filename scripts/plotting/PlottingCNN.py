@@ -63,16 +63,10 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, accuracy, CENTER_F
         cnnRising = [2500 if pos > neg else -100 for neg, pos in scores]
         cnnFalling = [500 if neg > pos else -100 for neg, pos in scores]
         pRising = [pos for _, pos in scores]
-    elif len(scores[0]) == 3:   # If we have a third 'none' class
-        cnnRising = [2500 if pos > neg and pos > none else -100 for neg, pos, none in scores]
-        cnnFalling = [500 if neg > pos and neg > none else -100 for neg, pos, none in scores]
-        cnnNone = [1500 if none > neg and none > pos else -100 for neg, pos, none in scores]
-        pRising = [pos for _, pos, _ in scores]
+
     xres = numpy.linspace(0.055, len(image[0]) / 16000 - 0.055, len(cnnRising))
     aximg.plot(xres, cnnRising, 'r|', label='Rising')
     aximg.plot(xres, cnnFalling, 'b|', label='Falling')
-    if len(scores[0]) == 3:
-        aximg.plot(xres, cnnNone, 'k|', label='Neither')
 
     aximg.set_xlabel("Time(s)")
     aximg.set_ylabel("Frequency(Hz)")
@@ -106,7 +100,8 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, accuracy, CENTER_F
     plt.annotate('Rising', xy=(0,1.0), xytext=(-0.05*xlim[1],1.1), arrowprops=dict(facecolor='black', shrink=0.01))
     plt.annotate('Falling', xy=(0,0.0), xytext=(-0.05*xlim[1],-0.1), arrowprops=dict(facecolor='black', shrink=0.01))
 
-    axproba.text(0,mini-0.05*mini, "Accuracy: {}".format(accuracy))
+    if accuracy is not None:
+        axproba.text(0,mini-0.05*mini, "Accuracy: {}".format(accuracy))
 
     plt.title(title if title is not None else "")
     figMgr = plt.get_current_fig_manager()

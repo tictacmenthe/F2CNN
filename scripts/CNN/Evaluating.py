@@ -24,29 +24,38 @@ from scripts.processing.PHNFileReader import ExtractPhonemes
 from .Training import normalizeInput
 
 
-def EvaluateOneWavArray(wavArray, framerate, wavFileName, keras, model, CENTER_FREQUENCIES=None,
+def EvaluateOneWavArray(wavArray, framerate, wavFileName, model='last_trained_model', LPF=False, CUTOFF=100,CENTER_FREQUENCIES=None,
                         FILTERBANK_COEFFICIENTS=None):
     # #### READING CONFIG FILE
     config = ConfigParser()
     config.read('F2CNN.conf')
-    ustos = 1 / 1000000.
-    labels=ExtractLabel(wavFileName, config)
-    labels=[(entry[-4],entry[-1]) for entry in labels]
+    RADIUS = config.getint('CNN', 'RADIUS')
+    SAMPPERIOD = config.getint('CNN', 'SAMPPERIOD')
+    NCHANNELS = config.getint('FILTERBANK', 'NCHANNELS')
+    DOTSPERINPUT = RADIUS * 2 + 1
+    USTOS = 1 / 1000000.
+
+    # Extracting labels, for accuracy computation
+    labels = ExtractLabel(wavFileName, config)
+    labels = [(entry[-4], entry[-1]) for entry in labels] if labels is not None else None
 
     if CENTER_FREQUENCIES is None:
-        nchannels = config.getint('FILTERBANK', 'NCHANNELS')
+        NCHANNELS = config.getint('FILTERBANK', 'NCHANNELS')
         lowcutoff = config.getint('FILTERBANK', 'LOW')
         # ##### PREPARATION OF FILTERBANK
         # CENTER FREQUENCIES ON ERB SCALE
-        CENTER_FREQUENCIES = filters.centre_freqs(framerate, nchannels, lowcutoff)
+        CENTER_FREQUENCIES = filters.centre_freqs(framerate, NCHANNELS, lowcutoff)
         # Filter coefficients for a Gammatone filterbank
         FILTERBANK_COEFFICIENTS = filters.make_erb_filters(framerate, CENTER_FREQUENCIES)
 
     print("Applying filterbank...")
     filtered = GetFilteredOutputFromArray(wavArray, FILTERBANK_COEFFICIENTS)
     del wavArray
-    print("Extracting Envelope...")
-    envelopes = ExtractEnvelopeFromMatrix(filtered, True, 2)
+    if not LPF:
+        print("Extracting Envelope...")
+    else:
+        print("Extraction Envelope with {}Hz Low Pass Filter...".format(CUTOFF))
+    envelopes = ExtractEnvelopeFromMatrix(filtered, LPF, CUTOFF)
     del filtered
 
     print("Extracting Formants...")
@@ -58,70 +67,74 @@ def EvaluateOneWavArray(wavArray, framerate, wavFileName, keras, model, CENTER_F
     phonemes = ExtractPhonemes(phnPath)
 
     print("Generating input data for CNN...")
-    nb = int(len(envelopes[0]) - 0.11 * framerate)
-    input_data = numpy.zeros([nb, 11, 128])
+    STEP = int(framerate * SAMPPERIOD * USTOS)
+    START = int(STEP * RADIUS)
+    nb = int(len(envelopes[0]) - DOTSPERINPUT*STEP)
+    input_data = numpy.zeros([nb, DOTSPERINPUT, NCHANNELS])
     print("INPUT SHAPE:", input_data.shape)
-    START = int(0.055 * framerate)
-    STEP = int(framerate * sampPeriod * ustos)
     for i in range(0, nb):
-        input_data[i] = [[channel[START + i + (k - 5) * STEP] for channel in envelopes] for k in range(11)]
+        input_data[i] = [[channel[START + i + (k - RADIUS) * STEP] for channel in envelopes] for k in
+                         range(DOTSPERINPUT)]
     for i, matrix in enumerate(input_data):
         input_data[i] = normalizeInput(matrix)
     input_data.astype('float32')
 
     print("Evaluating the data with the pretrained model...")
+    import keras
     model = keras.models.load_model(model)
-    scores = model.predict(input_data.reshape(nb, 11, 128, 1), verbose=1)
+    scores = model.predict(input_data.reshape(nb, DOTSPERINPUT, NCHANNELS, 1), verbose=1)
     simplified_scores = [1 if score[1] > score[0] else 0 for score in scores]
     # Attempt to compute an accuracy for the file. TODO: Doesn't take into account phonemes we use, step values
-    accuracy=0
-    total_valid = 0
+    keras.backend.clear_session()
     del model
     del input_data
-    for timepoint, score in enumerate(simplified_scores):
-        for index in range(len(labels)-1):
-            before=labels[index][0]
-            after=labels[index+1][0]
-            if before<timepoint<after and (abs(timepoint-before)<STEP or abs(timepoint-after)<STEP):
-                if abs(before-timepoint)<=abs(after-timepoint):
-                    if score == labels[index][1]:
-                        accuracy+=1
-                else:
-                    if score == labels[index+1][1]:
-                        accuracy+=1
-                total_valid+=1
-    accuracy/=total_valid
+    accuracy = None
+    if labels is not None:
+        accuracy = 0
+        total_valid = 0
+        for timepoint, score in enumerate(simplified_scores):
+            for index in range(len(labels) - 1):
+                before = labels[index][0]
+                after = labels[index + 1][0]
+                if before < timepoint < after and (abs(timepoint - before) < STEP or abs(timepoint - after) < STEP):
+                    if abs(before - timepoint) <= abs(after - timepoint):
+                        if score == labels[index][1]:
+                            accuracy += 1
+                    else:
+                        if score == labels[index + 1][1]:
+                            accuracy += 1
+                    total_valid += 1
+        accuracy /= total_valid
     print("Plotting...")
-    PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, accuracy, CENTER_FREQUENCIES, phonemes, formants, wavFileName)
-
+    PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, accuracy, CENTER_FREQUENCIES, phonemes, formants,
+                                           wavFileName)
     del envelopes
     del phonemes
-    keras.backend.clear_session()
 
 
-def EvaluateOneWavFile(wavFileName, keras, model = 'last_trained_model', CENTER_FREQUENCIES=None,
+def EvaluateOneWavFile(file, LPF=False, CUTOFF=50, model='last_trained_model', CENTER_FREQUENCIES=None,
                        FILTERBANK_COEFFICIENTS=None):
     """
     Evaluates one .WAV file with the keras model 'last_trained_model'.
     The model should take an input of Nx11x128x1, N being the number of frames in the file, minus the first and last 0.055ms.
     Its output should be two categories, the first one is 'falling', the second 'rising'.
     Produces graphs showing envelope amplitudes, formant frequency if an .FB file is available, results of the model.
+    :param file: Path to the evaluated file
+    :param LPF: Boolean specifying if using low pass filtering for envelope extraction
+    :param CUTOFF: Low Pass Filter cutoff frequency
     :param model: the keras model file to use
-    :param keras: variable allowing usage of the keras module
-    :param wavFileName: Path to the .WAV file used. If VTR Formants are used, the corresponding .FB file should have the same basename and be in the same directory.
     :param CENTER_FREQUENCIES: (OPTIONAL) Center frequencies of the gammatone filterbank, used for filtering, and also for plotting a spectrogram like figure.
     :param FILTERBANK_COEFFICIENTS: (OPTIONAL) Coefficients of the gammatone filterbank. Should be constructed with the gammatone library's 'gammatone.filters.make_erb.filters' function.
     """
     print('Using model', model)
-    print("File:\t\t{}".format(wavFileName))
-    framerate, wavArray = GetArrayFromWAV(wavFileName)
-    EvaluateOneWavArray(wavArray, framerate, wavFileName, keras, model, CENTER_FREQUENCIES,
-                        FILTERBANK_COEFFICIENTS)
-    print("\t\t{}\tdone !".format(wavFileName))
+    print("File:\t\t{}".format(file))
+    framerate, wavArray = GetArrayFromWAV(file)
+    EvaluateOneWavArray(wavArray=wavArray, framerate=framerate, LPF=LPF, CUTOFF=CUTOFF,wavFileName=file, model=model,
+                        CENTER_FREQUENCIES=CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS=FILTERBANK_COEFFICIENTS)
+    print("\t\t{}\tdone !".format(file))
 
 
-def EvaluateRandom(count = None):
-    import keras
+def EvaluateRandom(count=None, LPF=False, CUTOFF=50):
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Silence tensorflow logs
 
     TotalTime = time.time()
@@ -135,7 +148,6 @@ def EvaluateRandom(count = None):
     print("\n###############################\nEvaluating network on {} WAV files in '{}'.".format(len(wavFiles),
                                                                                                   os.path.split(
                                                                                                       wavFiles[0])[0]))
-
     if not wavFiles:
         print("NO WAV FILES FOUND")
         exit(-1)
@@ -150,14 +162,14 @@ def EvaluateRandom(count = None):
     CENTER_FREQUENCIES = filters.centre_freqs(framerate, nchannels, lowcutoff)
     FILTERBANK_COEFFICIENTS = filters.make_erb_filters(framerate, CENTER_FREQUENCIES)
 
+    # Selecting some random files, or all of them
     if count is None:
         numpy.random.shuffle(wavFiles)
     elif count > 1:
-        wavFiles=numpy.random.choice(wavFiles, count)
+        wavFiles = numpy.random.choice(wavFiles, count)
 
     for file in wavFiles:
-        EvaluateOneWavFile(file, keras, CENTER_FREQUENCIES=CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS=FILTERBANK_COEFFICIENTS)
-        # We give keras to avoid importing it for every file, and avoid importing it globally as it slows application startup
+        EvaluateOneWavFile(file, LPF=LPF, CUTOFF=CUTOFF, CENTER_FREQUENCIES=CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS=FILTERBANK_COEFFICIENTS)
 
     print("Evaluating network on all files.")
     print('              Total time:', time.time() - TotalTime)
@@ -165,7 +177,7 @@ def EvaluateRandom(count = None):
 
 
 def SNRdbToSNRlinear(SNRdb):
-    return 10**(SNRdb/10.0)
+    return 10 ** (SNRdb / 10.0)
 
 
 def RMS(signal):
@@ -177,13 +189,13 @@ def RMS(signal):
     return numpy.sqrt(numpy.mean(numpy.square(signal)))
 
 
-def EvaluateWithNoise(wavFileName, keras, CENTER_FREQUENCIES=None,
-                      FILTERBANK_COEFFICIENTS=None, SNRdb=-3):
-    print("File:\t\t{}".format(wavFileName))
-    print("Appyling gaussian noise, new SNR is {SNR}dB".format(SNR=SNRdb))
-    framerate, wavList = GetArrayFromWAV(wavFileName)
+def EvaluateWithNoise(file, LPF=False, CUTOFF=100, model='last_trained_model', CENTER_FREQUENCIES=None,
+                      FILTERBANK_COEFFICIENTS=None, SNRdB=-3):
+    print("File:\t\t{}".format(file))
+    print("Appyling gaussian noise, new SNR is {SNR}dB".format(SNR=SNRdB))
+    framerate, wavList = GetArrayFromWAV(file)
     # Generating noise
-    noise = numpy.random.normal(scale=RMS(wavList)/SNRdbToSNRlinear(SNRdb), size=wavList.shape[0])
+    noise = numpy.random.normal(scale=RMS(wavList) / SNRdbToSNRlinear(SNRdB), size=wavList.shape[0])
     output = noise + wavList
 
     # pyplot.plot(wavList, 'b.', markersize=0.5)
@@ -191,18 +203,23 @@ def EvaluateWithNoise(wavFileName, keras, CENTER_FREQUENCIES=None,
     # pyplot.show()
 
     # Creating and saving the new wav file
-    if not os.path.isdir(os.path.join('OutputWavFiles','addedNoise')):
+    if not os.path.isdir(os.path.join('OutputWavFiles', 'addedNoise')):
         print('CREATE')
-        os.makedirs(os.path.join('OutputWavFiles','addedNoise'))
-    baseName=os.path.join('OutputWavFiles', 'addedNoise', os.path.split(os.path.splitext(wavFileName)[0])[1])+'{SNR}DB'.format(SNR=SNRdb)
-    newPath=baseName+'.WAV'
-    srcBasename=os.path.splitext(wavFileName)[0]
+        os.makedirs(os.path.join('OutputWavFiles', 'addedNoise'))
+    baseName = os.path.join('OutputWavFiles', 'addedNoise',
+                            os.path.split(os.path.splitext(file)[0])[1]) + '{SNR}dB'.format(SNR=SNRdB)
+    newPath = baseName + '.WAV'
+    srcBasename = os.path.splitext(file)[0]
 
     wavfile.write(newPath, framerate, output)
-    copyfile(srcBasename+'.FB', baseName+'.FB')
-    copyfile(srcBasename+'.PHN', baseName+'.PHN')
-    copyfile(srcBasename+'.WRD', baseName+'.WRD')
-    print('New noisy WAVE file saved as', newPath)
-    EvaluateOneWavArray(output, framerate, newPath, keras, CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS)
+    try:
+        copyfile(srcBasename + '.FB', baseName + '.FB')
+        copyfile(srcBasename + '.PHN', baseName + '.PHN')
+        copyfile(srcBasename + '.WRD', baseName + '.WRD')
+    except FileNotFoundError:
+        print("No .FB or .PHN or .WRD files.")
 
-    print("\t\t{}\tdone !".format(wavFileName))
+    print('New noisy WAVE file saved as', newPath)
+    EvaluateOneWavArray(output, framerate, newPath, LPF=LPF, CUTOFF=CUTOFF, CENTER_FREQUENCIES=CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS=FILTERBANK_COEFFICIENTS)
+
+    print("\t\t{}\tdone !".format(file))
