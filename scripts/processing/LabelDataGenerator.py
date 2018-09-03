@@ -23,11 +23,10 @@ def ExtractLabel(wavFile, config):
     fileBase=splitext(wavFile)[0]
     # #### READING CONFIG FILE
     RADIUS = config.getint('CNN', 'RADIUS')
-    CENTERED = config.getboolean('CNN', 'CENTERED')
     RISK = config.getfloat('CNN', 'RISK')
     FORMANT = config.getint('CNN', 'FORMANT')
     SAMPPERIOD = config.getint('CNN', 'SAMPPERIOD')
-    DOTSPERINPUT = RADIUS * 2 + (1 if CENTERED else 0)
+    DOTSPERINPUT = RADIUS * 2 + 1
     USTOS = 1.0 / 1000000
 
     # Load the F2 values of the file
@@ -35,8 +34,6 @@ def ExtractLabel(wavFile, config):
     if FormantArray is None:
         return None
     phonemes = ExtractPhonemes(fileBase + '.PHN')
-    print(phonemes)
-    exit()
     # Get number of points
     framerate, wavList = GetArrayFromWAV(wavFile)
     wavToFormant = framerate * SAMPPERIOD * USTOS
@@ -64,7 +61,7 @@ def ExtractLabel(wavFile, config):
         FormantValues = numpy.array(GetFromantFrequenciesAround(FormantArray, step, RADIUS, wavToFormant))
 
         # Least Squares Method for linear regression of the F2 values
-        x = numpy.array([step + (k - 5) * STEP for k in range(DOTSPERINPUT)])
+        x = numpy.array([step + (k - RADIUS) * STEP for k in range(DOTSPERINPUT)])
         A = numpy.vstack([x, numpy.ones(len(x))]).T
         [a, b], _, _, _ = numpy.linalg.lstsq(A, FormantValues, rcond=None)
         # Pearson Correlation Coefficient r and p-value p using scipy.stats.pearsonr
@@ -115,7 +112,7 @@ def GenerateLabelData():
     # Saving into a file
     filePath = join("trainingData", "label_data.csv")
     with open(filePath, "w") as outputFile:
-        writer = csv.writer(outputFile)
+        writer = csv.writer(outputFile, lineterminator='\n')
         for line in csvLines:
             writer.writerow(line)
     print("Generated Label Data CSV of", len(csvLines), "lines.")
