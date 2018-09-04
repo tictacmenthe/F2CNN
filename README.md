@@ -21,13 +21,15 @@ Use the f2cnn.py **Python3** script as en entrance like in the examples below, o
 
 ``` python3 f2cnn.py prepare filter ``` \
 -> prepares Filtered outputs from the gammatone filterbank\
-
+Saves all the outputs as '.GFB.npy' files.
 ``` python3 f2cnn.py prepare envelope```\
 __Optional command:__ ```--cutoff FREQ ``` for a low pass filtering on the envelopes with a cutoff of FREQ Hz  \
--> prepares extracted envelope numpy array files using a low pass filter at 50Hz, saves them in a FILENAME.ENVi.npy format, i being the method used.\
+-> prepares extracted envelope numpy array files using a low pass filter at 50Hz\
+Saves all outputs as '.ENV1.npy' files. The 1 means that the method used is the first one, should there be more in the future.
 
 ``` python3 f2cnn.py prepare label ``` \
--> prepares CNN output labels from the previous files, using VTR .FB files, .PHN files and filenames, as a trainingData/label_data.csv file.\
+-> prepares CNN output labels from the previous files, using VTR .FB files, .PHN files and filenames.\
+Saves it as a trainingData/label_data.csv file.\
 
 ``` python3 f2cnn.py prepare input```\
 __Optional command:__ ```--cutoff FREQ ``` specifies the cutoff frequency for the output file(should be the same as the envelopes)\

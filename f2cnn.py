@@ -103,7 +103,9 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
                             help="To use with evalnoise to give a SNR in dB.")
     # Processes the input arguments
     args = parser.parse_args()
-    print(args)
+    # print("Arguments:")
+    # for arg in args.__dict__.keys():
+    #     print("\t{}: {}".format(arg,args.__dict__[arg]))
     # Calls to functions according to arguments
     if 'prepare_command' in args:
         prepare_args={}
@@ -157,8 +159,8 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
     elif args.configure:
         configure()
     else:
-        print("For help, use python3 f2cnn.py --help or -h, or check the documentation on github.")
         print("No valid command given.")
+        print("For help, use python3 f2cnn.py --help or -h, or check the documentation on github.")
 
 
 if __name__ == '__main__':
