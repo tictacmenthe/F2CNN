@@ -28,7 +28,7 @@ def EvaluateOneWavArray(wavArray, framerate, wavFileName, model='last_trained_mo
                         FILTERBANK_COEFFICIENTS=None):
     # #### READING CONFIG FILE
     config = ConfigParser()
-    config.read('F2CNN.conf')
+    config.read('configF2CNN.conf')
     RADIUS = config.getint('CNN', 'RADIUS')
     SAMPPERIOD = config.getint('CNN', 'SAMPLING_PERIOD')
     NCHANNELS = config.getint('FILTERBANK', 'NCHANNELS')
@@ -154,7 +154,7 @@ def EvaluateRandom(count=None, LPF=False, CUTOFF=50):
 
     # Reading the config file
     config = ConfigParser()
-    config.read('F2CNN.conf')
+    config.read('configF2CNN.conf')
     framerate = config.getint('FILTERBANK', 'FRAMERATE')
     nchannels = config.getint('FILTERBANK', 'NCHANNELS')
     lowcutoff = config.getint('FILTERBANK', 'LOW_FREQUENCY')

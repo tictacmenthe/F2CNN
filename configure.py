@@ -32,5 +32,7 @@ parser['CNN']['EPOCHS'] = epochs
 parser['CNN']['RISK'] = risk
 parser['CNN']['SAMPLING_PERIOD'] = sampPeriod
 
-with open('F2CNN.conf', 'w') as fp:
+print("Saving configuration file as 'configF2CNN.conf")
+with open('configF2CNN.conf', 'w') as fp:
     parser.write(fp)
+

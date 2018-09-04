@@ -18,7 +18,7 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, accuracy, CENTER_F
 
     # #### READING CONFIG FILE
     config = ConfigParser()
-    config.read('F2CNN.conf')
+    config.read('configF2CNN.conf')
     framerate = config.getint('FILTERBANK', 'FRAMERATE')
     radius = config.getint('CNN', 'RADIUS')
     sampPeriod = config.getint('CNN', 'sampperiod') / 1000000

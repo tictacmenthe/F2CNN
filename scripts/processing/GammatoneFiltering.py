@@ -108,7 +108,7 @@ def FilterAllOrganisedFiles():
 
     # #### READING CONFIG FILE
     config = ConfigParser()
-    config.read('F2CNN.conf')
+    config.read('configF2CNN.conf')
     framerate = config.getint('FILTERBANK', 'FRAMERATE')
     nchannels = config.getint('FILTERBANK', 'NCHANNELS')
     lowcutoff = config.getint('FILTERBANK', 'LOW_FREQUENCY')

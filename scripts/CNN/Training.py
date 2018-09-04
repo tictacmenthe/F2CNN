@@ -54,7 +54,7 @@ def TrainAndPlotLoss(labelFile=None, inputFile=None):
 
     # ### CONFIGURATION
     config = ConfigParser()
-    config.read('F2CNN.conf')
+    config.read('configF2CNN.conf')
     batch_size = config.getint('CNN', 'BATCH_SIZE')
     num_classes = 2
     epochs = config.getint('CNN', 'EPOCHS')
@@ -152,4 +152,5 @@ def TrainAndPlotLoss(labelFile=None, inputFile=None):
     val_acc.legend()
     val_loss.legend()
     pyplot.show(fig)
+    print("Figure saved as 'last_trained_model_results.png'")
     pyplot.savefig('last_trained_model_results.png')

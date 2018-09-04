@@ -53,7 +53,7 @@ def GenerateInputData(labelFile=None, inputFile=None, LPF=False, CUTOFF=100):
           totalTimePoints, "entry timepoints.")
     # #### READING CONFIG FILE
     config = ConfigParser()
-    config.read('F2CNN.conf')
+    config.read('configF2CNN.conf')
     RADIUS = config.getint('CNN', 'RADIUS')
     SAMPPERIOD = config.getint('CNN', 'SAMPLING_PERIOD')
     FRAMERATE = config.getint('FILTERBANK', 'FRAMERATE')

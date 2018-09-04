@@ -20,7 +20,7 @@ from .PHNFileReader import ExtractPhonemes, SILENTS, GetPhonemeFromArrayAt
 
 
 def ExtractLabel(wavFile, config):
-    fileBase=os.path.splitext(wavFile)[0]
+    fileBase = os.path.splitext(wavFile)[0]
     # #### READING CONFIG FILE
     RADIUS = config.getint('CNN', 'RADIUS')
     RISK = config.getfloat('CNN', 'RISK')
@@ -49,7 +49,7 @@ def ExtractLabel(wavFile, config):
     START = int(STEP * RADIUS)
     steps = [START + k * STEP for k in range(nb)]
 
-    output=[]
+    output = []
     # Getting the data for each 'step'
     for step in steps:
         phoneme = GetPhonemeFromArrayAt(phonemes, step)  # Extraction of the required phonemes
@@ -74,7 +74,7 @@ def ExtractLabel(wavFile, config):
         if p < RISK:
             entry.append(1 if a > 0 else 0)
             output.append(entry)
-    return output if len(output)>0 else None
+    return output if len(output) > 0 else None
 
 
 def GenerateLabelData():
@@ -82,7 +82,7 @@ def GenerateLabelData():
 
     # #### READING CONFIG FILE
     config = ConfigParser()
-    config.read('F2CNN.conf')
+    config.read('configF2CNN.conf')
 
     # Get all the files under resources
     filenames = glob.glob(os.path.join("resources", "f2cnn", "*", "*.WAV"))
@@ -111,9 +111,10 @@ def GenerateLabelData():
 
     # Saving into a file
     filePath = os.path.join("trainingData", "label_data.csv")
+    print("Saving {} lines in '{}'.".format(len(csvLines), filePath))
     os.makedirs(os.path.split(filePath)[0], exist_ok=True)
     with open(filePath, "w") as outputFile:
-        writer = csv.writer(outputFile, lineterminator='\n') # lineterminator needed for compatibility with windows
+        writer = csv.writer(outputFile, lineterminator='\n')  # lineterminator needed for compatibility with windows
         for line in csvLines:
             writer.writerow(line)
     print("Generated Label Data CSV of", len(csvLines), "lines.")
