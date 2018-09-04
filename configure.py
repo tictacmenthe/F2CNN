@@ -21,16 +21,16 @@ parser = ConfigParser()
 parser.add_section('FILTERBANK')
 parser['FILTERBANK']['FRAMERATE'] = framerate
 parser['FILTERBANK']['NCHANNELS'] = nchannels
-parser['FILTERBANK']['LOW'] = lowcutoff
+parser['FILTERBANK']['LOW_FREQUENCY'] = lowcutoff
 
 parser.add_section('CNN')
 parser['CNN']['FORMANT'] = formant
 parser['CNN']['CENTERED'] = centered
 parser['CNN']['RADIUS'] = inputRadius
-parser['CNN']['BATCHSIZE'] = batchsize
+parser['CNN']['BATCH_SIZE'] = batchsize
 parser['CNN']['EPOCHS'] = epochs
 parser['CNN']['RISK'] = risk
-parser['CNN']['SAMPPERIOD'] = sampPeriod
+parser['CNN']['SAMPLING_PERIOD'] = sampPeriod
 
 with open('F2CNN.conf', 'w') as fp:
     parser.write(fp)

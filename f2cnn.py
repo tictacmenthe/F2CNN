@@ -1,5 +1,5 @@
+import os
 import argparse
-from os.path import join, isfile
 
 from scripts.processing.OrganiseFiles import OrganiseAllFiles
 from scripts.processing.GammatoneFiltering import FilterAllOrganisedFiles
@@ -60,13 +60,13 @@ eval:\tEvaluates a keras model using one WAV file.\n\t\t
 evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\n\t\tMay be interrupted whenever, if needed.
     """
     fileHelpText = "Used to give a file path as an argument to some scripts."
+    inputHelpText = "Used to give a path to an input numpy file as an argument to some scripts."
+    labelHelpText = "Used to give a path to a label csv file as an argument to some scripts."
     modelHelpText = "Used to give the path to a keras model as an argument to some scripts."
 
     # #####  PARSING
     parser = argparse.ArgumentParser(description="F2CNN Project's entry script.",
                                      epilog="For additional information, add -h after any positional argument")
-    # TODO silent
-    parser.add_argument('--silent', '-s', action='store_false', help="Remove logs, for mostly silent processing.")
     subparsers = parser.add_subparsers()
 
     # Parser for data processing purposes
@@ -76,6 +76,8 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
                                 help="If used, low pass filter of given argument as cutoff frequency will be used")
     parser_prepare.add_argument('prepare_command', choices=PREPARE_FUNCTIONS.keys(), help=preparationHelpText)
     parser_prepare.add_argument('--file', '-f', action='store', dest='file', nargs='?', help=fileHelpText)
+    parser_prepare.add_argument('--input', '-i', action='store', dest='inputFile', nargs='?', help=inputHelpText)
+    parser_prepare.add_argument('--label', '-l', action='store', dest='labelFile', nargs='?', help=labelHelpText)
 
     # Parser for plotting purposes
     parser_plot = subparsers.add_parser('plot', help='For plotting spectrogram-like figure from .WAV file.')
@@ -88,20 +90,30 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
     parser_cnn = subparsers.add_parser('cnn', help='Commands related to training, testing and using the CNN.',
                                        formatter_class=argparse.RawTextHelpFormatter)
     parser_cnn.add_argument('--file', '-f', action='store', dest='file', nargs='?', help=fileHelpText)
-    parser_cnn.add_argument('--model', '-m', action='store', dest='model', nargs='?', help=fileHelpText)
+    parser_cnn.add_argument('--input', '-i', action='store', dest='inputFile', nargs='?', help=inputHelpText)
+    parser_cnn.add_argument('--label', '-l', action='store', dest='labelFile', nargs='?', help=labelHelpText)
+    parser_cnn.add_argument('--model', '-m', action='store', dest='model', nargs='?', help=modelHelpText)
     parser_cnn.add_argument('cnn_command', choices=CNN_FUNCTIONS.keys(), help=cnnHelpText)
     parser_cnn.add_argument('--count', '-c', action='store', type=int, help="Number of files to be evaluated")
-    parser_cnn.add_argument('--lpf', action='store', type=int, dest='CUTOFF', help="Use Low Pass Filtering on Input Data")
-    parser_cnn.add_argument('--noise','-n', action='store', type=float, dest='SNRdB', help="To use with evalnoise to give a SNR in dB.")
+    parser_cnn.add_argument('--lpf', action='store', type=int, dest='CUTOFF',
+                            help="Use Low Pass Filtering on Input Data")
+    parser_cnn.add_argument('--noise', '-n', action='store', type=float, dest='SNRdB',
+                            help="To use with evalnoise to give a SNR in dB.")
     # Processes the input arguments
     args = parser.parse_args()
     print(args)
     # Calls to functions according to arguments
     if 'prepare_command' in args:
+        prepare_args={}
         if args.prepare_command in ['envelope', 'input', 'all']:  # In case we need to use a low pass filter
-            PREPARE_FUNCTIONS[args.prepare_command](False if args.CUTOFF is None else True, args.CUTOFF)
-        else:
-            PREPARE_FUNCTIONS[args.prepare_command]()
+            prepare_args['LPF']=False if args.CUTOFF is None else True
+            prepare_args['CUTOFF']=args.CUTOFF
+        if args.prepare_command == 'input':
+            if args.labelFile is not None:
+                prepare_args['labelFile']=args.labelFile
+            if args.inputFile is not None:
+                prepare_args['inputFile']=args.inputFile
+        PREPARE_FUNCTIONS[args.prepare_command](**prepare_args)
     elif 'plot_type' in args:
         if args.file is None:
             print("Please use --file or -f to give input file")
@@ -109,49 +121,39 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
             print("Plotting for file {}...".format(args.file))
             PlotEnvelopesAndF2FromFile(args.file)
     elif 'cnn_command' in args:
-        if args.cnn_command == 'eval':
-            if 'file' in args and args.file is not None:
-                evalArgs = {}
-                import keras
-                evalArgs['file']=args.file
-                evalArgs['keras']=keras
-                if 'CUTOFF' in args:
-                    evalArgs['LPF']=True
-                    evalArgs['CUTOFF']=args.CUTOFF
-                if 'model' in args and args.model is not None:
-                    evalArgs['model']=args.model
-                CNN_FUNCTIONS[args.cnn_command](**evalArgs)
-            else:
-                print("Please use --file or -f command to give an input file")
-        elif args.cnn_command == 'evalnoise':
-            if args.file is not None:
-                evalArgs = {}
-                import keras
-                evalArgs['file']=args.file
-                evalArgs['keras']=keras
-                if 'CUTOFF' in args:
-                    evalArgs['LPF']=True
-                    evalArgs['CUTOFF']=args.CUTOFF
-                if 'model' in args and args.model is not None:
-                    evalArgs['model']=args.model
-                if 'SNRdB' in args and args.SNRdB is not None:
-                    evalArgs['SNRdB']=args.SNRdB
-                CNN_FUNCTIONS[args.cnn_command](**evalArgs)
-            else:
-                print("Please use --file or -f command to give an input file")
-        elif args.cnn_command == 'train':
-            inputFile = args.file or join('trainingData', 'input_data.npy')
-            if not isfile(inputFile):
+        if args.cnn_command == 'train':
+            inputFile = args.file or os.path.join('trainingData', 'last_input_data.npy')
+            labelFile = args.labelFile or os.path.join('trainingData', 'label_data.csv')
+            if not os.path.isfile(inputFile):
                 print(
-                    "Please use this command only after having prepared input data,\nor give a path to an input data file with --file")
-            CNN_FUNCTIONS[args.cnn_command](inputFile)
-        elif args.cnn_command == 'evalrand':
-            if args.count is not None:
-                CNN_FUNCTIONS[args.cnn_command](args.count)
-            else:
-                CNN_FUNCTIONS[args.cnn_command]()
+                    "Please first generate the input data file with 'prepare input',\n\
+                    or give a path to an input data file with --input")
+                print(
+                    "Reminder: input data files generated with 'prepare input' are stored in \n\
+                    trainingData/ as 'input_data_LPFX.npy or 'input_data_NOLPF.npy', depending on Low Pass Filtering used.")
+            if not os.path.isfile(labelFile):
+                print(
+                    "Please first generate a label data file with 'prepare label',\n\
+                    or give a path to a label data file with --label")
+                print(
+                    "Reminder: label data files generated with 'prepare label' are stored in \n\
+                    trainingData/ as 'label_data.csv'.")
+            CNN_FUNCTIONS[args.cnn_command](labelFile=labelFile, inputFile=inputFile)
+            return
+        elif 'file' in args and args.file is not None:
+            evalArgs = {'file': args.file}
+            if 'CUTOFF' in args:
+                evalArgs['LPF'] = True
+                evalArgs['CUTOFF'] = args.CUTOFF
+            if 'model' in args and args.model is not None:
+                evalArgs['model'] = args.model
+            if args.cnn_command == 'evalnoise' and 'SNRdB' in args and args.SNRdB is not None:
+                evalArgs['SNRdB'] = args.SNRdB
+            if args.cnn_command == 'evalrand' and 'count' in args and args.count is not None:
+                evalArgs['COUNT'] = args.count
+            CNN_FUNCTIONS[args.cnn_command](**evalArgs)
     else:
-        print("For help, use python3 f2cnn.py --help or -h.")
+        print("For help, use python3 f2cnn.py --help or -h, or check the documentation on github.")
         print("No valid command given.")
 
 

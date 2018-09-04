@@ -7,9 +7,9 @@ Requires a prior execution of the OrganiseFiles.py, GammatoneFiltering.py, Envel
 """
 import csv
 import glob
+import os
 import time
 from configparser import ConfigParser
-from os.path import join, split, splitext
 
 import numpy
 from scipy.stats import pearsonr
@@ -20,12 +20,12 @@ from .PHNFileReader import ExtractPhonemes, SILENTS, GetPhonemeFromArrayAt
 
 
 def ExtractLabel(wavFile, config):
-    fileBase=splitext(wavFile)[0]
+    fileBase=os.path.splitext(wavFile)[0]
     # #### READING CONFIG FILE
     RADIUS = config.getint('CNN', 'RADIUS')
     RISK = config.getfloat('CNN', 'RISK')
     FORMANT = config.getint('CNN', 'FORMANT')
-    SAMPPERIOD = config.getint('CNN', 'SAMPPERIOD')
+    SAMPPERIOD = config.getint('CNN', 'SAMPLING_PERIOD')
     DOTSPERINPUT = RADIUS * 2 + 1
     USTOS = 1.0 / 1000000
 
@@ -41,8 +41,8 @@ def ExtractLabel(wavFile, config):
     nb = int(nf / (framerate * SAMPPERIOD * USTOS) - DOTSPERINPUT - 1)
 
     # Get the information about the person
-    region, speaker, sentence = split(fileBase)[1].split(".")
-    testOrTrain = split(split(fileBase)[0])[1]
+    region, speaker, sentence = os.path.split(fileBase)[1].split(".")
+    testOrTrain = os.path.split(os.path.split(fileBase)[0])[1]
 
     # Discretization of the values for each entry required
     STEP = int(framerate * SAMPPERIOD * USTOS)
@@ -85,9 +85,9 @@ def GenerateLabelData():
     config.read('F2CNN.conf')
 
     # Get all the files under resources
-    filenames = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))
+    filenames = glob.glob(os.path.join("resources", "f2cnn", "*", "*.WAV"))
     print("\n###############################\nGenerating Label Data from files in '{}' into 2 classes.".format(
-        split(split(filenames[0])[0])[0]))
+        os.path.split(os.path.split(filenames[0])[0])[0]))
 
     # Alphanumeric order
     filenames = sorted(filenames)
@@ -110,9 +110,10 @@ def GenerateLabelData():
         print("\t\t{:<50}\tdone !".format(file))
 
     # Saving into a file
-    filePath = join("trainingData", "label_data.csv")
+    filePath = os.path.join("trainingData", "label_data.csv")
+    os.makedirs(os.path.split(filePath)[0], exist_ok=True)
     with open(filePath, "w") as outputFile:
-        writer = csv.writer(outputFile, lineterminator='\n')
+        writer = csv.writer(outputFile, lineterminator='\n') # lineterminator needed for compatibility with windows
         for line in csvLines:
             writer.writerow(line)
     print("Generated Label Data CSV of", len(csvLines), "lines.")

@@ -117,7 +117,6 @@ def ExtractAndSaveEnvelope(gfbFileName, nbf, LPF=False, CUTOFF=100):
     SaveEnvelope(ExtractEnvelope(gfbFileName, LPF, CUTOFF), saveName, nbf)
 
 
-
 def InitProcesses(cn):
     global counter
     counter = cn

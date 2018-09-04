@@ -8,13 +8,13 @@ The files should be first processed with OrganiseFiles.py
 
 """
 
+import os
 import glob
 import time
 from configparser import ConfigParser
 from itertools import repeat
 from multiprocessing import cpu_count, Value
 from multiprocessing.pool import Pool
-from os.path import splitext, join, split
 
 import numpy
 from scipy.io import wavfile as WavFileTool
@@ -27,15 +27,15 @@ counter = None
 
 def GetArrayFromWAV(filename):
     with open(filename, 'rb') as wavFile:
-        header=wavFile.read(4)
-    if header == b'RIFF':   # RIFF header, for WAVE files
+        header = wavFile.read(4)
+    if header == b'RIFF':  # RIFF header, for WAVE files
         framerate, wavArray = WavFileTool.read(filename)
-    else:                   # NIST header, which uses SPHERE
-        file=SPHFile(filename)
+    else:  # NIST header, which uses SPHERE
+        file = SPHFile(filename)
         framerate = file.format['sample_rate']
-        wavArray=numpy.zeros(len(file.time_range()), dtype=numpy.int16)
+        wavArray = numpy.zeros(len(file.time_range()), dtype=numpy.int16)
         for i, value in enumerate(file.time_range()):
-            wavArray[i]=value
+            wavArray[i] = value
     return framerate, wavArray
 
 
@@ -67,7 +67,7 @@ def loadGFBMatrix(filename):
 
 
 def GammatoneFiltering(wavFile, n):
-    gfbFilename = splitext(wavFile)[0] + '.GFB'
+    gfbFilename = os.path.splitext(wavFile)[0] + '.GFB'
     print("Filtering:\t{}".format(wavFile))
 
     # Compute the filterbank output
@@ -95,9 +95,10 @@ def FilterAllOrganisedFiles():
 
     # Get all the WAV files under resources
     # wavFiles = glob.glob(join("resources", "f2cnn", "*", "*.WAV"))
-    wavFiles = glob.glob(join("resources", "f2cnn", "**", "*.WAV"))
+    wavFiles = glob.glob(os.path.join("resources", "f2cnn", "**", "*.WAV"))
 
-    print("\n###############################\nApplying FilterBank to files in '{}'.".format(split(wavFiles[0])[0]))
+    print("\n###############################\nApplying FilterBank to files in '{}'.".format(
+        os.path.split(wavFiles[0])[0]))
 
     if not wavFiles:
         print("NO WAV FILES FOUND, PLEASE ORGANIZE FILES")
@@ -110,7 +111,7 @@ def FilterAllOrganisedFiles():
     config.read('F2CNN.conf')
     framerate = config.getint('FILTERBANK', 'FRAMERATE')
     nchannels = config.getint('FILTERBANK', 'NCHANNELS')
-    lowcutoff = config.getint('FILTERBANK', 'LOW')
+    lowcutoff = config.getint('FILTERBANK', 'LOW_FREQUENCY')
     # ##### PREPARATION OF FILTERBANK
     # CENTER FREQUENCIES ON ERB SCALE
     CENTER_FREQUENCIES = filters.centre_freqs(framerate, nchannels, lowcutoff)

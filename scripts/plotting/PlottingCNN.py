@@ -1,10 +1,8 @@
 """
     This file gives access to plotting CNN result data for this project
 """
-
+import os
 from configparser import ConfigParser
-from os import makedirs
-from os.path import join, split, isdir
 
 import matplotlib.pyplot as plt
 import numpy
@@ -14,7 +12,8 @@ from scipy.stats import pearsonr
 from scripts.plotting.PlottingProcessing import ReshapeEnvelopesForSpectrogram
 
 
-def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, accuracy, CENTER_FREQUENCIES, phonemes, Formants=None, title=None):
+def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, accuracy, CENTER_FREQUENCIES, phonemes, Formants=None,
+                                           title=None):
     image = ReshapeEnvelopesForSpectrogram(envelopes, CENTER_FREQUENCIES)
 
     # #### READING CONFIG FILE
@@ -28,18 +27,18 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, accuracy, CENTER_F
 
     formant = []
     # fig = plt.figure()
-    fig = plt.figure(figsize=(32,16))
+    fig = plt.figure(figsize=(32, 16))
     aximg = fig.add_subplot(211)
     axproba = fig.add_subplot(212)
     axproba.axis([0, len(image[0]) / framerate, -1.6, 1.6])
 
-    aximg.imshow(image, norm=LogNorm(), aspect="auto", extent=[0, len(envelopes[0]) / framerate, 100, framerate/2])
+    aximg.imshow(image, norm=LogNorm(), aspect="auto", extent=[0, len(envelopes[0]) / framerate, 100, framerate / 2])
     aximg.autoscale(False)
     if Formants is not None:
         pvalues = []
 
         for j in range(len(Formants)):
-            formant.append(Formants[j][FORMANT-1])
+            formant.append(Formants[j][FORMANT - 1])
 
         # Discretization of the values for each entry required
         slopes = []
@@ -54,12 +53,13 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, accuracy, CENTER_F
             slopes.append(a)
             pvalues.append(p)
 
-        axproba.plot(xformant[radius:-radius], [numpy.arctan(slope) for slope in slopes], 'g', label='Arctan(F{}\')'.format(FORMANT))
+        axproba.plot(xformant[radius:-radius], [numpy.arctan(slope) for slope in slopes], 'g',
+                     label='Arctan(F{}\')'.format(FORMANT))
         axproba.plot(xformant[radius:-radius], pvalues, 'r', label='p-values of slopes')
 
     # Extraction and plotting of rising/falling results
     cnnRising, cnnFalling, cnnNone, pRising = [], [], [], []
-    if len(scores[0]) == 2:     # If we only have Rising and Falling classes
+    if len(scores[0]) == 2:  # If we only have Rising and Falling classes
         cnnRising = [2500 if pos > neg else -100 for neg, pos in scores]
         cnnFalling = [500 if neg > pos else -100 for neg, pos in scores]
         pRising = [pos for _, pos in scores]
@@ -95,20 +95,20 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, accuracy, CENTER_F
     axproba.axhline(0)
     axproba.axhline(0.5)
     axproba.axhline(1.0)
-    xlim=axproba.get_xlim()
+    xlim = axproba.get_xlim()
 
-    plt.annotate('Rising', xy=(0,1.0), xytext=(-0.05*xlim[1],1.1), arrowprops=dict(facecolor='black', shrink=0.01))
-    plt.annotate('Falling', xy=(0,0.0), xytext=(-0.05*xlim[1],-0.1), arrowprops=dict(facecolor='black', shrink=0.01))
+    plt.annotate('Rising', xy=(0, 1.0), xytext=(-0.05 * xlim[1], 1.1), arrowprops=dict(facecolor='black', shrink=0.01))
+    plt.annotate('Falling', xy=(0, 0.0), xytext=(-0.05 * xlim[1], -0.1),
+                 arrowprops=dict(facecolor='black', shrink=0.01))
 
     if accuracy is not None:
-        axproba.text(0,mini-0.05*mini, "Accuracy: {}".format(accuracy))
+        axproba.text(0, mini - 0.05 * mini, "Accuracy: {}".format(accuracy))
 
     plt.title(title if title is not None else "")
     figMgr = plt.get_current_fig_manager()
     figMgr.resize(*figMgr.window.maxsize())
     # plt.show(fig)
-    if not isdir(join("graphs", "FallingOrRising")):
-        makedirs(join("graphs", "FallingOrRising"))
-
-    plt.savefig(join("graphs", "FallingOrRising", split(title)[1])+'.png',dpi=200)
+    filePath = os.path.join("graphs", "FallingOrRising", os.path.split(title)[1]) + '.png'
+    os.makedirs(os.path.split(filePath)[0], exist_ok=True)
+    plt.savefig(filePath, dpi=200)
     plt.close(fig)

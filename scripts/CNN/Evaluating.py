@@ -30,7 +30,7 @@ def EvaluateOneWavArray(wavArray, framerate, wavFileName, model='last_trained_mo
     config = ConfigParser()
     config.read('F2CNN.conf')
     RADIUS = config.getint('CNN', 'RADIUS')
-    SAMPPERIOD = config.getint('CNN', 'SAMPPERIOD')
+    SAMPPERIOD = config.getint('CNN', 'SAMPLING_PERIOD')
     NCHANNELS = config.getint('FILTERBANK', 'NCHANNELS')
     DOTSPERINPUT = RADIUS * 2 + 1
     USTOS = 1 / 1000000.
@@ -41,7 +41,7 @@ def EvaluateOneWavArray(wavArray, framerate, wavFileName, model='last_trained_mo
 
     if CENTER_FREQUENCIES is None:
         NCHANNELS = config.getint('FILTERBANK', 'NCHANNELS')
-        lowcutoff = config.getint('FILTERBANK', 'LOW')
+        lowcutoff = config.getint('FILTERBANK', 'LOW_FREQUENCY')
         # ##### PREPARATION OF FILTERBANK
         # CENTER FREQUENCIES ON ERB SCALE
         CENTER_FREQUENCIES = filters.centre_freqs(framerate, NCHANNELS, lowcutoff)
@@ -157,7 +157,7 @@ def EvaluateRandom(count=None, LPF=False, CUTOFF=50):
     config.read('F2CNN.conf')
     framerate = config.getint('FILTERBANK', 'FRAMERATE')
     nchannels = config.getint('FILTERBANK', 'NCHANNELS')
-    lowcutoff = config.getint('FILTERBANK', 'LOW')
+    lowcutoff = config.getint('FILTERBANK', 'LOW_FREQUENCY')
     # CENTER FREQUENCIES ON ERB SCALE
     CENTER_FREQUENCIES = filters.centre_freqs(framerate, nchannels, lowcutoff)
     FILTERBANK_COEFFICIENTS = filters.make_erb_filters(framerate, CENTER_FREQUENCIES)
@@ -198,14 +198,8 @@ def EvaluateWithNoise(file, LPF=False, CUTOFF=100, model='last_trained_model', C
     noise = numpy.random.normal(scale=RMS(wavList) / SNRdbToSNRlinear(SNRdB), size=wavList.shape[0])
     output = noise + wavList
 
-    # pyplot.plot(wavList, 'b.', markersize=0.5)
-    # pyplot.plot(output, 'r.',markersize=0.5)
-    # pyplot.show()
-
     # Creating and saving the new wav file
-    if not os.path.isdir(os.path.join('OutputWavFiles', 'addedNoise')):
-        print('CREATE')
-        os.makedirs(os.path.join('OutputWavFiles', 'addedNoise'))
+    os.makedirs(os.path.join('OutputWavFiles', 'addedNoise'), exist_ok=True)
     baseName = os.path.join('OutputWavFiles', 'addedNoise',
                             os.path.split(os.path.splitext(file)[0])[1]) + '{SNR}dB'.format(SNR=SNRdB)
     newPath = baseName + '.WAV'
@@ -216,10 +210,11 @@ def EvaluateWithNoise(file, LPF=False, CUTOFF=100, model='last_trained_model', C
         copyfile(srcBasename + '.FB', baseName + '.FB')
         copyfile(srcBasename + '.PHN', baseName + '.PHN')
         copyfile(srcBasename + '.WRD', baseName + '.WRD')
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        print(e.strerror)
         print("No .FB or .PHN or .WRD files.")
 
     print('New noisy WAVE file saved as', newPath)
-    EvaluateOneWavArray(output, framerate, newPath, LPF=LPF, CUTOFF=CUTOFF, CENTER_FREQUENCIES=CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS=FILTERBANK_COEFFICIENTS)
+    EvaluateOneWavArray(output, framerate, newPath, model=model, LPF=LPF, CUTOFF=CUTOFF, CENTER_FREQUENCIES=CENTER_FREQUENCIES, FILTERBANK_COEFFICIENTS=FILTERBANK_COEFFICIENTS)
 
     print("\t\t{}\tdone !".format(file))
