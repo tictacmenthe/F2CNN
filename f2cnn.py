@@ -9,7 +9,7 @@ from scripts.processing.InputGenerator import GenerateInputData
 from scripts.plotting.PlottingProcessing import PlotEnvelopesAndF2FromFile
 from scripts.CNN.Evaluating import EvaluateOneWavFile, EvaluateRandom, EvaluateWithNoise
 from scripts.CNN.Training import TrainAndPlotLoss
-
+from configure import configure
 
 def All(LPF=False, CUTOFF=100):
     """
@@ -67,6 +67,8 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
     # #####  PARSING
     parser = argparse.ArgumentParser(description="F2CNN Project's entry script.",
                                      epilog="For additional information, add -h after any positional argument")
+    parser.add_argument('--configure','-c', action='store_true', help='Generates a configuration file for the project')
+
     subparsers = parser.add_subparsers()
 
     # Parser for data processing purposes
@@ -152,6 +154,8 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
             if args.cnn_command == 'evalrand' and 'count' in args and args.count is not None:
                 evalArgs['COUNT'] = args.count
             CNN_FUNCTIONS[args.cnn_command](**evalArgs)
+    elif args.configure:
+        configure()
     else:
         print("For help, use python3 f2cnn.py --help or -h, or check the documentation on github.")
         print("No valid command given.")

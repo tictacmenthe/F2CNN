@@ -4,7 +4,7 @@ The project uses TIMIT database and VTR Formants database as resources for the C
 
 
 ## Usage
-**Use the *configure.py* script with python3 to initialize a few parameters for the program.**\
+**Use the ```configure.py``` script with python3, or run ```python3 f2cnn.py --configure/-c``` to initialize a few parameters for the program.**\
 Run it every time one of the project parameters need to change (Sampling rates, cutoff frequencies, numbers of channels, number of classes...).\
 Use the f2cnn.py **Python3** script as en entrance like in the examples below, or use the functions in the scripts/ directories in your own.
 

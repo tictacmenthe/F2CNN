@@ -32,7 +32,7 @@ def GenerateInputData(labelFile=None, inputFile=None, LPF=False, CUTOFF=100):
     if not os.path.isdir("trainingData"):
         print("LABEL GENERATION SHOULD BE DONE PRIOR TO INPUT...")
         exit(-1)
-    csvFilename = labelFile or os.path.join("trainingData", "label_data.csv") # Default file
+    csvFilename = labelFile or os.path.join("trainingData", "label_data.csv")  # Default file
 
     # Extract all filepaths and timepoints for each file as a dict{file:[timepoints]}
     filesAndTimepointsDict = GetListOfEnvelopeFilesAndTimepoints(csvFilename)
