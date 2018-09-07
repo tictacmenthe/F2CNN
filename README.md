@@ -1,18 +1,18 @@
 # F2CNN
 Speech feature extraction using Gammatone FilterBank and CNN.\
-The project uses TIMIT database and VTR Formants database as resources for the CNN.
+The project uses TIMIT database and VTR Formants database as resources for the CNN.\
 
 
 ## Usage
 **Use the ```configure.py``` script with python3, or run ```python3 f2cnn.py --configure/-c``` to initialize a few parameters for the program.**\
 Run it every time one of the project parameters need to change (Sampling rates, cutoff frequencies, numbers of channels, number of classes...).\
-Use the f2cnn.py **Python3** script as en entrance like in the examples below, or use the functions in the scripts/ directories in your own.
+Use the f2cnn.py **Python3** script as en entrance like in the examples below, or use the functions in the scripts/ directories in your own.\
 
-###Available commands:
+## Available commands:\
 ```python3 f2cnn.py -h/--help``` \
 -> gives some help and tips after any argument.
 
-##### Data processing scripts
+#### Data processing scripts
 ``` python3 f2cnn.py prepare all ``` \
 -> prepares all the data for CNN usage (may take a few minutes and requires a lot of disk space (~50GB if full Timit/vtr database).\
 
@@ -23,7 +23,7 @@ Use the f2cnn.py **Python3** script as en entrance like in the examples below, o
 -> prepares Filtered outputs from the gammatone filterbank\
 Saves all the outputs as '.GFB.npy' files.
 ``` python3 f2cnn.py prepare envelope```\
-__Optional command:__ ```--cutoff FREQ ``` for a low pass filtering on the envelopes with a cutoff of FREQ Hz  \
+_Optional command:_ ```--cutoff FREQ ``` for a low pass filtering on the envelopes with a cutoff of FREQ Hz  \
 -> prepares extracted envelope numpy array files using a low pass filter at 50Hz\
 Saves all outputs as '.ENV1.npy' files. The 1 means that the method used is the first one, should there be more in the future.
 
@@ -31,33 +31,33 @@ Saves all outputs as '.ENV1.npy' files. The 1 means that the method used is the 
 -> prepares CNN output labels from the previous files, using VTR .FB files, .PHN files and filenames.\
 Saves it as a trainingData/label_data.csv file.\
 ``` python3 f2cnn.py prepare input```\
-__Optional command:__ ```--cutoff FREQ ``` specifies the cutoff frequency for the output file(should be the same as the envelopes)\
+_Optional command:_ ```--cutoff FREQ ``` specifies the cutoff frequency for the output file(should be the same as the envelopes)\
 -> prepares CNN input data matrices from latest extracted envelopes, and saves the whole as a NxDOTS_PER_INPUTx_NB_CHANNELS ndarray trainingData/input_data.npy.\
 If CUTOFF is used, will save the file as trainingData/input_data_LPFX.npy with X the frequency.\
 Also makes a backup as trainingData/last_input_data.npy, just in case.
 
-##### Data plotting scripts
+#### Data plotting scripts
 ```python3 f2cnn.py plot gtg --file/-f *PathToAWAVFileFile*```\
 -> Plots a spectrogram like representation of GammaTone FilterBank output.
-##### CNN related scripts
+#### CNN related scripts
 ```python3 f2cnn.py cnn train```\
- __Optional commands:__
+ _Optional commands:_
 ```--input *PathToInputDataFile*``` allows the use of a specific input data file \
 ```--label *PathToLabelCSVFile*``` allows the use of a specific label data file\
 -> Trains a CNN using the given input data file, or by default trainingData/input_data.npy, also uses the default labe_data.csv file. \
 ```python3 f2cnn.py cnn eval --file *PathToAWAVFile*``` \
 -> Uses the last_trained_model keras model to predict Rising or Falling for F2 on all frames of the given .WAV file, plotting results in graphs/FallingOrRising directory. \
 ```python3 f2cnn.py cnn evalrand``` \
-__Optional command:__ ```--count N``` only uses N randomly selected files
+_Optional command:_ ```--count N``` only uses N randomly selected files
 -> Same as the above, but evaluates randomly all the VTR related TIMIT .WAV files.\
 ```python3 f2cnn.py cnn evalnoise```\
-__Optional command:__ ```--noise SNRdB``` specifies a Signal to Noise Ratio in dB for the new WAV file, that is saved inside 'OutputWavFiles/addedNoise'.\
+_Optional command:_ ```--noise SNRdB``` specifies a Signal to Noise Ratio in dB for the new WAV file, that is saved inside 'OutputWavFiles/addedNoise'.\
 
-__Optional commands for the last 3 functions:__ \
+_Optional commands for the last 3 functions:_ \
 ```--model *PathToAKerasModel*``` allows the use of a specific keras model(default:'last_trained_model')\
 ```--cutoff FREQ``` allows the use of a FREQ Hz cutoff Low Pass Filter on envelope extraction
 
-### Required structure
+## Required structure
 There is a certain way the project directories should be organized before running ```prepare organize``` or ```prepare all```:\
 project_root/\
 -scripts/   -> This file's directory\
@@ -68,7 +68,7 @@ project_root/\
 **--TIMIT/**    -> TIMIT database as is, **including TEST and TRAIN directories**\
 **--VTR/**      -> VTR FORMANTS files as is, **including TEST and TRAIN subdirectories**\
 So make sure to put the TIMIT(the one including TEST and TRAIN directories) and VTR directories in the resources directory.
-### Dependencies
+## Dependencies
 Compatibility with Windows is not garanteed.\
 This project requires the installation of:
 - numpy - 1.14.5
