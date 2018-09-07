@@ -30,7 +30,6 @@ Saves all outputs as '.ENV1.npy' files. The 1 means that the method used is the 
 ``` python3 f2cnn.py prepare label ``` \
 -> prepares CNN output labels from the previous files, using VTR .FB files, .PHN files and filenames.\
 Saves it as a trainingData/label_data.csv file.\
-
 ``` python3 f2cnn.py prepare input```\
 __Optional command:__ ```--cutoff FREQ ``` specifies the cutoff frequency for the output file(should be the same as the envelopes)\
 -> prepares CNN input data matrices from latest extracted envelopes, and saves the whole as a NxDOTS_PER_INPUTx_NB_CHANNELS ndarray trainingData/input_data.npy.\

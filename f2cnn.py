@@ -6,7 +6,7 @@ from scripts.processing.GammatoneFiltering import FilterAllOrganisedFiles
 from scripts.processing.EnvelopeExtraction import ExtractAllEnvelopes
 from scripts.processing.LabelDataGenerator import GenerateLabelData
 from scripts.processing.InputGenerator import GenerateInputData
-from scripts.plotting.PlottingProcessing import PlotEnvelopesAndF2FromFile
+from scripts.plotting.PlottingProcessing import PlotEnvelopesAndFormantsFromFile
 from scripts.CNN.Evaluating import EvaluateOneWavFile, EvaluateRandom, EvaluateWithNoise
 from scripts.CNN.Training import TrainAndPlotLoss
 from configure import configure
@@ -41,7 +41,7 @@ def main():
     }
 
     PLOT_FUNCTIONS = {
-        'gtg': PlotEnvelopesAndF2FromFile
+        'gtg': PlotEnvelopesAndFormantsFromFile
     }
 
     # Help texts for some argument groups
@@ -123,7 +123,7 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
             print("Please use --file or -f to give input file")
         else:
             print("Plotting for file {}...".format(args.file))
-            PlotEnvelopesAndF2FromFile(args.file)
+            PlotEnvelopesAndFormantsFromFile(args.file)
     elif 'cnn_command' in args:
         if args.cnn_command == 'train':
             inputFile = args.file or os.path.join('trainingData', 'last_input_data.npy')
@@ -146,7 +146,7 @@ evalrand:\tEvaluates all the .WAV files in resources/f2cnn/* in a random order.\
             return
         elif 'file' in args and args.file is not None:
             evalArgs = {'file': args.file}
-            if 'CUTOFF' in args:
+            if 'CUTOFF' in args and args.CUTOFF is not None:
                 evalArgs['LPF'] = True
                 evalArgs['CUTOFF'] = args.CUTOFF
             if 'model' in args and args.model is not None:

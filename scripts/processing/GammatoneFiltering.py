@@ -111,7 +111,7 @@ def FilterAllOrganisedFiles():
     config.read('configF2CNN.conf')
     framerate = config.getint('FILTERBANK', 'FRAMERATE')
     nchannels = config.getint('FILTERBANK', 'NCHANNELS')
-    lowcutoff = config.getint('FILTERBANK', 'LOW_FREQUENCY')
+    lowcutoff = config.getint('FILTERBANK', 'LOW_FREQ')
     # ##### PREPARATION OF FILTERBANK
     # CENTER FREQUENCIES ON ERB SCALE
     CENTER_FREQUENCIES = filters.centre_freqs(framerate, nchannels, lowcutoff)

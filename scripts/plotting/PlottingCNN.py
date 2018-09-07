@@ -9,30 +9,31 @@ import numpy
 from matplotlib.colors import LogNorm
 from scipy.stats import pearsonr
 
-from scripts.plotting.PlottingProcessing import ReshapeEnvelopesForSpectrogram
+from scripts.plotting.PlottingProcessing import ReshapeEnvelopesForSpectrogram, PlotEnvelopeSpectrogram
 
 
 def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, accuracy, CENTER_FREQUENCIES, phonemes, Formants=None,
-                                           title=None):
-    image = ReshapeEnvelopesForSpectrogram(envelopes, CENTER_FREQUENCIES)
+                                           title=None, start=0, end=None):
 
     # #### READING CONFIG FILE
     config = ConfigParser()
     config.read('configF2CNN.conf')
-    framerate = config.getint('FILTERBANK', 'FRAMERATE')
-    radius = config.getint('CNN', 'RADIUS')
-    sampPeriod = config.getint('CNN', 'sampperiod') / 1000000
+    FRAMERATE = config.getint('FILTERBANK', 'FRAMERATE')
+    RADIUS = config.getint('CNN', 'RADIUS')
+    SAMPLING_PERIOD = config.getint('CNN', 'SAMPLING_PERIOD') / 1000000
     FORMANT = config.getint('CNN', 'FORMANT')
-    dotsperinput = radius * 2 + 1
+    LOW_FREQ=config.getint('FILTERBANK', 'LOW_FREQ')
+    DOTS_PER_INPUT = RADIUS * 2 + 1
+
 
     formant = []
     # fig = plt.figure()
     fig = plt.figure(figsize=(32, 16))
     aximg = fig.add_subplot(211)
-    axproba = fig.add_subplot(212)
-    axproba.axis([0, len(image[0]) / framerate, -1.6, 1.6])
+    end=PlotEnvelopeSpectrogram(envelopes, axis=aximg,CENTER_FREQUENCIES=CENTER_FREQUENCIES, LOW_FREQ=LOW_FREQ, FRAMERATE=16000, start=0, end=None)
 
-    aximg.imshow(image, norm=LogNorm(), aspect="auto", extent=[0, len(envelopes[0]) / framerate, 100, framerate / 2])
+    axproba = fig.add_subplot(212)
+    axproba.axis([start/FRAMERATE, end/FRAMERATE, -1.6, 1.6])
     aximg.autoscale(False)
     if Formants is not None:
         pvalues = []
@@ -42,38 +43,40 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, accuracy, CENTER_F
 
         # Discretization of the values for each entry required
         slopes = []
-        xformant = [i * sampPeriod for i in range(len(formant))]
+        xformant = [i * SAMPLING_PERIOD for i in range(len(formant))]
         aximg.plot(xformant, formant, 'k-', label='F{} Frequencies (Hz)'.format(FORMANT))
-        for centerDot in range(radius, len(formant) - radius, 1):
-            currentDots = numpy.array([formant[centerDot + (k - radius)] for k in range(dotsperinput)])
-            x = numpy.array([xformant[centerDot + (k - radius)] * framerate for k in range(dotsperinput)])
+        for centerDot in range(RADIUS, len(formant) - RADIUS, 1):
+            currentDots = numpy.array([formant[centerDot + (k - RADIUS)] for k in range(DOTS_PER_INPUT)])
+            x = numpy.array([xformant[centerDot + (k - RADIUS)] * FRAMERATE for k in range(DOTS_PER_INPUT)])
             A = numpy.vstack([x, numpy.ones(len(x))]).T
             [a, b], _, _, _ = numpy.linalg.lstsq(A, currentDots, rcond=None)
             r, p = pearsonr(currentDots, a * x + b)
             slopes.append(a)
             pvalues.append(p)
 
-        axproba.plot(xformant[radius:-radius], [numpy.arctan(slope) for slope in slopes], 'g',
+        axproba.plot(xformant[RADIUS:-RADIUS], [numpy.arctan(slope) for slope in slopes], 'g',
                      label='Arctan(F{}\')'.format(FORMANT))
-        axproba.plot(xformant[radius:-radius], pvalues, 'r', label='p-values of slopes')
-
+        axproba.plot(xformant[RADIUS:-RADIUS], pvalues, 'r', label='p-values of slopes')
+    print(start,end)
     # Extraction and plotting of rising/falling results
     cnnRising, cnnFalling, cnnNone, pRising = [], [], [], []
     if len(scores[0]) == 2:  # If we only have Rising and Falling classes
         cnnRising = [2500 if pos > neg else -100 for neg, pos in scores]
         cnnFalling = [500 if neg > pos else -100 for neg, pos in scores]
         pRising = [pos for _, pos in scores]
-
-    xres = numpy.linspace(0.055, len(image[0]) / 16000 - 0.055, len(cnnRising))
-    aximg.plot(xres, cnnRising, 'r|', label='Rising')
-    aximg.plot(xres, cnnFalling, 'b|', label='Falling')
+    cnnRising=cnnRising[start:end]
+    cnnFalling=cnnRising[start:end]
+    pRising=pRising[start:end]
+    img_range = numpy.linspace(start/FRAMERATE,end/FRAMERATE, end-start)
+    aximg.plot(img_range, cnnRising, 'r|', label='Rising')
+    aximg.plot(img_range, cnnFalling, 'b|', label='Falling')
 
     aximg.set_xlabel("Time(s)")
     aximg.set_ylabel("Frequency(Hz)")
     axproba.set_xlabel("Time(s)")
 
     # Plotting the probability of rising according to the used network
-    axproba.plot(xres, pRising, label='Probability of F2 rising for network')
+    axproba.plot(img_range, pRising, label='Probability of F2 rising for network')
 
     # Plotting the phonemes
     mini = axproba.get_ylim()[0]
@@ -107,8 +110,6 @@ def PlotEnvelopesAndCNNResultsWithPhonemes(envelopes, scores, accuracy, CENTER_F
     plt.title(title if title is not None else "")
     figMgr = plt.get_current_fig_manager()
     figMgr.resize(*figMgr.window.maxsize())
-    # plt.show(fig)
+    plt.show()
     filePath = os.path.join("graphs", "FallingOrRising", os.path.split(title)[1]) + '.png'
     os.makedirs(os.path.split(filePath)[0], exist_ok=True)
-    plt.savefig(filePath, dpi=200)
-    plt.close(fig)

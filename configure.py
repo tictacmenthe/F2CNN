@@ -23,7 +23,7 @@ def configure():
     parser.add_section('FILTERBANK')
     parser['FILTERBANK']['FRAMERATE'] = framerate
     parser['FILTERBANK']['NCHANNELS'] = nchannels
-    parser['FILTERBANK']['LOW_FREQUENCY'] = lowcutoff
+    parser['FILTERBANK']['LOW_FREQ'] = lowcutoff
 
     parser.add_section('CNN')
     parser['CNN']['FORMANT'] = formant

@@ -41,7 +41,7 @@ def EvaluateOneWavArray(wavArray, framerate, wavFileName, model='last_trained_mo
 
     if CENTER_FREQUENCIES is None:
         NCHANNELS = config.getint('FILTERBANK', 'NCHANNELS')
-        lowcutoff = config.getint('FILTERBANK', 'LOW_FREQUENCY')
+        lowcutoff = config.getint('FILTERBANK', 'LOW_FREQ')
         # ##### PREPARATION OF FILTERBANK
         # CENTER FREQUENCIES ON ERB SCALE
         CENTER_FREQUENCIES = filters.centre_freqs(framerate, NCHANNELS, lowcutoff)
@@ -55,6 +55,7 @@ def EvaluateOneWavArray(wavArray, framerate, wavFileName, model='last_trained_mo
         print("Extracting Envelope...")
     else:
         print("Extraction Envelope with {}Hz Low Pass Filter...".format(CUTOFF))
+    print(LPF, CUTOFF)
     envelopes = ExtractEnvelopeFromMatrix(filtered, LPF, CUTOFF)
     del filtered
 
@@ -157,7 +158,7 @@ def EvaluateRandom(count=None, LPF=False, CUTOFF=50):
     config.read('configF2CNN.conf')
     framerate = config.getint('FILTERBANK', 'FRAMERATE')
     nchannels = config.getint('FILTERBANK', 'NCHANNELS')
-    lowcutoff = config.getint('FILTERBANK', 'LOW_FREQUENCY')
+    lowcutoff = config.getint('FILTERBANK', 'LOW_FREQ')
     # CENTER FREQUENCIES ON ERB SCALE
     CENTER_FREQUENCIES = filters.centre_freqs(framerate, nchannels, lowcutoff)
     FILTERBANK_COEFFICIENTS = filters.make_erb_filters(framerate, CENTER_FREQUENCIES)

@@ -3,6 +3,7 @@
 """
 
 import os
+from configparser import ConfigParser
 
 import matplotlib.pyplot as plt
 import numpy
@@ -41,7 +42,7 @@ def GetNewHeightERB(matrix, CENTER_FREQUENCIES):
     return height, ratios
 
 
-def ReshapeEnvelopesForSpectrogram(envelopes, CENTER_FREQUENCIES):
+def ReshapeEnvelopesForSpectrogram(envelopes, CENTER_FREQUENCIES, start=0, end=None):
     # Plotting the image, with logarithmic normalization and cell heights corresponding to ERB scale
     h, ratios = GetNewHeightERB(envelopes, CENTER_FREQUENCIES)
     image = numpy.zeros([h, envelopes.shape[1]])
@@ -53,43 +54,78 @@ def ReshapeEnvelopesForSpectrogram(envelopes, CENTER_FREQUENCIES):
             image[i + j] = line
         i += j + 1
         r += 1
-    return image
+    if end is not None:
+        return image[:, start:end]
+    else:
+        return image[:, start:]
 
 
-def PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES):
+def PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES, axis=plt, LOW_FREQ=100, FRAMERATE=16000, start=0, end=None):
     """
     Plots a spectrogram-like representation of a matrix, with ERB scale as bandwidths
-    :param title: title for the plot
-    :param sampPeriod: sampling period of the formants
-    :param Formants: 2d array of the formants to plot along the image
     :param matrix: the matrix of outputs from the FilterBank
     :param CENTER_FREQUENCIES: the center frequency of each channel of the matrix
+    :param LOW_FREQ: Plotting frequency range's lower limit
+    :param FRAMERATE: Framerate used for the .WAV file
+    :param start: starting point of the plot, in seconds
+    :param end: ending point of the plot
+    :return end: the new end point of the matrix, in case it was None
     """
-    image = ReshapeEnvelopesForSpectrogram(matrix, CENTER_FREQUENCIES)
+    image = ReshapeEnvelopesForSpectrogram(matrix, CENTER_FREQUENCIES, start, end)
     # Plotting the VTR formants over the envelope image
+    axis.imshow(image, norm=LogNorm(), aspect="auto",
+               extent=[start, len(image[0]) / FRAMERATE, LOW_FREQ, int(FRAMERATE / 2)])
+    return len(image)
 
-    plt.imshow(image, norm=LogNorm(), aspect="auto", extent=[0, len(matrix[0]) / 16000., 100, 7795])
 
+def PlotEnvelopesAndFormantsFromFile(filename, start=0, end=None, formantToPlot=5):
+    """
+    Plots a spectrogramlike representation of the gammatone filterbank output on a wav file,
+    including formants from VTR database if available
+    :type filename: path to a .wav file, if there are .FB files for formant data,
+                    they should have the same name and end in .FB
+    :param start: starting point of the plot, in seconds
+    :param end: ending point of the plot
+    :param formantToPlot: specific formant to plot
+    """
+    # #### READING CONFIG FILE
+    config = ConfigParser()
+    config.read('configF2CNN.conf')
+    LOW_FREQ = config.getint('FILTERBANK', 'LOW_FREQ')
+    sampPeriod = config.getint('CNN', 'SAMPLING_PERIOD')
 
-def PlotEnvelopesAndF2FromFile(filename):
     framerate, _ = GetArrayFromWAV(filename)
-    ustos=1.0/1000000
+    ustos = 1.0 / 1000000
     CENTER_FREQUENCIES = centre_freqs(framerate, 128, 100)
     FILTERBANK_COEFFICIENTS = make_erb_filters(framerate, CENTER_FREQUENCIES)
     matrix, framerate = GetFilteredOutputFromFile(filename, FILTERBANK_COEFFICIENTS)
     matrix = ExtractEnvelopeFromMatrix(matrix)
-    PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES)
+
+    # Plot the gtgram but do not show it, changes end to the size(if it was None)
+    end = PlotEnvelopeSpectrogram(matrix, CENTER_FREQUENCIES=CENTER_FREQUENCIES, LOW_FREQ=LOW_FREQ, start=start,
+                                  end=end)
+
     fbPath = os.path.splitext(filename)[0] + '.FB'
-    formants, sampPeriod = ExtractFBFile(fbPath)
+    formants, _ = ExtractFBFile(fbPath)
+    print(len(formants))
+    print(sampPeriod)
+
+    # Plot the formants, if available
     if formants is not None:
         Formants = [[], [], [], []]
-        formants = formants[:, :4]
+        formants = formants[:, :4]  # The formants are the first 4 columns of the .FB file(which is a binary file)
         for i in range(4):
             for j in range(len(formants)):
                 Formants[i].append(formants[j][i])
+        # Time range for the plot, in seconds
         t = [i * sampPeriod * ustos for i in range(len(Formants[0]))]
-        for i, Formant in enumerate(Formants):
-            plt.plot(t, Formant, label='F{} Frequencies (Hz)'.format(i + 1))
+
+        if 0 < formantToPlot < 5:
+            Formants = Formants[formantToPlot-1]
+            plt.plot(t,Formants, label='F{} Frequencies (Hz)'.format(formantToPlot))
+        else:
+            for i, Formant in enumerate(Formants):
+                plt.plot(t, Formant, label='F{} Frequencies (Hz)'.format(i + 1))
         plt.legend()
         plt.text(t[-1] / 2, -700, "File:" + filename)
     title = "'Spectrogram' like representation of envelopes, and formants"
