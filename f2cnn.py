@@ -44,6 +44,7 @@ def main():
         'gtg': PlotEnvelopesAndFormantsFromFile
     }
 
+
     # Help texts for some argument groups
     preparationHelpText = """Data Processing Commands:\n\t\
 organize:\tOrganizes the files as needed for the rest\n\t\t\t(Check OrganiseFiles.py documentation)\n\t\
